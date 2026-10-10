@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ruang Rupa Interaktif</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+  :root { --ink:#1d2a2f; --paper:#f7f5f0; --accent:#2f6f8f; --warn:#b3412f; }
+  body { margin:0; font:15px/1.5 system-ui,sans-serif; color:var(--ink); }
+  .ui { position:fixed; z-index:10; background:var(--paper); border-radius:6px; padding:14px; box-shadow:0 2px 12px #0004; }
+  #hud { top:10px; left:10px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  #hud button { padding:6px 10px; }
+  #login, #lobi { inset:0; margin:auto; width:min(360px,90vw); height:fit-content; }
+  #lobi { display:none; }
+  #tombolGoogle { display:flex; justify-content:center; margin-top:12px; min-height:44px; }
+  #studio { right:10px; top:60px; width:min(300px,90vw); display:none; }
+  #studio label { display:block; margin:6px 0 2px; font-weight:600; }
+  #studio input, #studio select { width:100%; padding:6px; box-sizing:border-box; }
+  #studio img { width:100%; margin-top:8px; border-radius:4px; }
+  #pesan { bottom:10px; left:10px; max-width:80vw; display:none; }
+  button { cursor:pointer; padding:8px 12px; border:0; border-radius:4px; background:var(--accent); color:#fff; }
+  button.alt { background:#6b7a80; }
+  #avatars button[aria-pressed="true"] { outline:3px solid var(--ink); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline:3px solid #f2b705; }
+</style>
+</head>
+<body>
+
+<div id="login" class="ui">
+  <h2 style="margin:0 0 8px">Ruang Rupa Interaktif</h2>
+  <p style="margin:0">Masuk dengan akun Google mana pun (Gmail atau akun sekolah).</p>
+  <div id="tombolGoogle"></div>
+  <p id="infoLogin" style="margin:10px 0 0;color:var(--warn);font-size:13px"></p>
+</div>
+
+<div id="lobi" class="ui">
+  <h2 style="margin:0 0 4px">Ruang Rupa Interaktif</h2>
+  <p id="akun" style="margin:0 0 8px;font-size:13px;color:#555"></p>
+  <label for="nama">Nama panggilan</label>
+  <input id="nama" maxlength="40" style="width:100%;padding:6px;box-sizing:border-box">
+  <p>Pilih avatar</p>
+  <div id="avatars" style="display:flex;gap:8px"></div>
+  <p><button id="masuk">Masuk pameran</button> <button id="keluar" class="alt">Ganti akun</button></p>
+</div>
+
+<div id="hud" class="ui" style="display:none">
+  <button data-zona="A">Lorong Apresiasi</button>
+  <button data-zona="C">Studio AI</button>
+  <button data-zona="D">Galeri Bersama</button>
+  <span id="pager" style="display:none;gap:4px;align-items:center"><button id="prev" aria-label="Halaman sebelumnya">&lsaquo;</button><span id="hal">1/1</span><button id="next" aria-label="Halaman berikutnya">&rsaquo;</button></span>
+</div>
+
+<div id="studio" class="ui" role="dialog" aria-label="Studio Desain AI">
+  <label for="tema">Tema</label><input id="tema" placeholder="mis. pasar pagi di Kediri">
+  <label for="aliran">Aliran seni</label>
+  <select id="aliran"><option>Impresionisme</option><option>Kubisme</option><option>Ekspresionisme</option><option>Batik kontemporer</option><option>Surealisme</option></select>
+  <label for="palet">Palet warna</label>
+  <select id="palet"><option>hangat (oranye, kuning, merah)</option><option>dingin (biru, hijau, ungu)</option><option>monokrom</option><option>warna komplementer</option></select>
+  <label for="detail">Detail tambahan</label><input id="detail">
+  <p><button id="buat">Buat gambar</button></p>
+  <div id="hasil"></div>
+</div>
+<div id="pesan" class="ui" role="status"></div>
+
+<a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:true" cursor="rayOrigin:mouse" raycaster="objects:.klik">
+  <a-entity light="type:ambient;intensity:0.7"></a-entity>
+  <a-entity light="type:directional;intensity:0.6" position="2 6 3"></a-entity>
+  <a-plane rotation="-90 0 0" width="80" height="80" color="#cfc7b8"></a-plane>
+  <a-entity id="dunia"></a-entity>
+  <a-entity id="rig" position="0 0 6" wasd-controls="acceleration:30">
+    <a-camera id="cam" look-controls></a-camera>
+  </a-entity>
+  <a-entity id="lain"></a-entity>
+</a-scene>
+
+<script>
+/* ===== KONFIGURASI (isi sebelum dipakai) ===== */
+// URL web app Apps Script (berakhiran /exec)
+const API_URL = 'https://script.google.com/macros/s/AKfycbxqRNXm_MW0zoQc8X5g0GSLXtbcsW_HaCuY2d8wZIEuKc9u-fPuusTEku-G70KUvWEDuA/exec';
+// OAuth Client ID (tipe Web application) dari Google Cloud Console
+const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.googleusercontent.com';
+// Firebase (kosongkan databaseURL untuk mematikan multiplayer)
+const FB = { apiKey:'', authDomain:'', databaseURL:'', projectId:'' };
+/* ============================================= */
+
+const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
+let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
+let halaman = 0, zonaAktif = 'A'; const PER = 12;
+const $ = id => document.getElementById(id);
+function pesan(t, ms=4000){ const p=$('pesan'); p.textContent=t; p.style.display='block'; clearTimeout(pesan.t); pesan.t=setTimeout(()=>p.style.display='none',ms); }
+
+/* Panggilan ke Apps Script. text/plain menghindari preflight CORS. */
+async function gs(fn, ...args){
+  let r;
+  try{
+    r = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ token, fn, args }) });
+  }catch(e){ throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet.'); }
+  let j; try{ j = await r.json(); }catch(e){ throw new Error('Balasan server tidak terbaca.'); }
+  if(j.ok) return j.data;
+  if(j.kode==='AUTH'){ keLogin('Sesi habis. Masuk lagi dengan Google.'); }
+  throw new Error(j.error||'Terjadi kesalahan.');
+}
+
+/* ----- Login Google ----- */
+function keLogin(info){
+  token=''; try{ sessionStorage.removeItem('rr_token'); }catch(e){}
+  $('lobi').style.display='none'; $('hud').style.display='none'; $('studio').style.display='none';
+  $('login').style.display='block'; $('masuk').disabled=false;
+  if(info) pesan(info,7000);
+}
+function bacaToken(t){ try{ const p=JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); return p; }catch(e){ return null; } }
+async function setelahLogin(t){
+  const p=bacaToken(t); if(!p||p.exp*1000<Date.now()) return keLogin('Sesi habis. Masuk lagi dengan Google.');
+  token=t; try{ sessionStorage.setItem('rr_token',t); }catch(e){}
+  try{
+    const r=await gs('getProfile');
+    saya.email=r.email; $('akun').textContent='Masuk sebagai '+r.email;
+    if(r.profile){ $('nama').value=r.profile.nama; saya.avatar=r.profile.avatar; tandaiAvatar(); }
+    $('login').style.display='none'; $('lobi').style.display='block';
+  }catch(e){ if(token) pesan(e.message,9000); }
+}
+function infoLogin(t){ $('infoLogin').textContent=t; }
+function mulaiGoogle(){
+  if(location.protocol==='file:'){ return infoLogin('Halaman dibuka dari file di komputer. Tombol Google hanya jalan dari alamat web (https://... atau http://localhost). Unggah ke GitHub Pages/Firebase Hosting, atau jalankan server lokal.'); }
+  if(GOOGLE_CLIENT_ID.indexOf('ISI_')===0||API_URL.indexOf('ISI_')===0){ return infoLogin('Konfigurasi belum diisi: ganti API_URL dan GOOGLE_CLIENT_ID di bagian KONFIGURASI pada Index.html.'); }
+  if(!window.google||!google.accounts){
+    mulaiGoogle.n=(mulaiGoogle.n||0)+1;
+    if(mulaiGoogle.n>50) return infoLogin('Skrip Google (accounts.google.com/gsi/client) gagal dimuat. Periksa koneksi internet atau pemblokir iklan/ekstensi.');
+    return setTimeout(mulaiGoogle,200);
+  }
+  infoLogin('');
+  google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:r=>setelahLogin(r.credential), auto_select:false, cancel_on_tap_outside:false });
+  google.accounts.id.renderButton($('tombolGoogle'),{ theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'id', width:280 });
+  let simpan=''; try{ simpan=sessionStorage.getItem('rr_token')||''; }catch(e){}
+  const p=simpan&&bacaToken(simpan);
+  if(p&&p.exp*1000>Date.now()+60000) setelahLogin(simpan);
+}
+$('keluar').onclick=()=>{ if(window.google&&google.accounts) google.accounts.id.disableAutoSelect(); keLogin(); };
+window.addEventListener('load',mulaiGoogle);
+
+/* Lobi */
+function tandaiAvatar(){ document.querySelectorAll('#avatars button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.c===saya.avatar))); }
+AVATAR.forEach(([n,c])=>{ const b=document.createElement('button'); b.textContent=n; b.dataset.c=c; b.style.background=c;
+  b.onclick=()=>{ saya.avatar=c; tandaiAvatar(); }; $('avatars').append(b); });
+tandaiAvatar();
+$('masuk').onclick = async () => {
+  saya.nama = $('nama').value.trim(); if(!saya.nama) return pesan('Isi nama panggilan dahulu.');
+  $('masuk').disabled = true;
+  try{
+    await gs('saveAvatar', saya.nama, saya.avatar);
+    $('lobi').style.display='none'; $('hud').style.display='flex';
+    await muatGaleri(); bangunLorong(); bangunGaleri(); mulaiMultiplayer(); pindah('A');
+  }catch(e){ $('masuk').disabled=false; pesan(e.message,8000); }
+};
+
+/* Zona */
+const POS = { A:[0,0,6], C:[-30,0,6], D:[30,0,6] };
+function pindah(z){ zonaAktif=z; $('pager').style.display=z==='D'?'inline-flex':'none'; $('rig').setAttribute('position', POS[z].join(' ')); $('studio').style.display = z==='C'?'block':'none'; }
+document.querySelectorAll('[data-zona]').forEach(b=>b.onclick=()=>pindah(b.dataset.zona));
+
+function bingkai(parent, x, y, z, rotY, url, judul, onClick){
+  const g=document.createElement('a-entity'); g.setAttribute('position',`${x} ${y} ${z}`); g.setAttribute('rotation',`0 ${rotY} 0`);
+  const buat=(tag,at)=>{ const e=document.createElement(tag); for(const k in at) e.setAttribute(k,at[k]); g.append(e); return e; };
+  buat('a-plane',{width:2.2,height:2.2,color:'#3a2f26'});
+  if(url){ const im=buat('a-image',{class:'klik',position:'0 0 0.02',width:2,height:2,src:url}); if(onClick) im.addEventListener('click',onClick); }
+  buat('a-text',{value:judul||'Bingkai kosong',align:'center',width:3,position:'0 -1.4 0.02',color:'#222'});
+  parent.append(g); return g;
+}
+function bangunLorong(){ /* Zona A: ganti URL dengan karya maestro dari sheet/folder Anda */
+  const d=$('dunia'); for(let i=0;i<4;i++) bingkai(d, -4, 1.7, i*-5+2, 90, '', 'Karya maestro '+(i+1));
+}
+function bangunGaleri(){ /* Zona D: 12 bingkai per halaman, 2 baris x 6 */
+  const d=$('dunia'); d.querySelectorAll('.zd').forEach(e=>e.remove());
+  const maks=Math.max(0,Math.ceil(galeri.length/PER)-1); halaman=Math.min(halaman,maks);
+  galeri.slice(halaman*PER,(halaman+1)*PER).forEach((k,i)=>{
+    const judul=`${k.nama}${k.sayaSuka?' (disukai)':''} - ${k.suka} suka`;
+    const g=bingkai(d, 22+(i%6)*3.2, 1.7+Math.floor(i/6)*3, -6, 0, k.url, judul, async()=>{
+      if(k.milikSaya) return pesan('Ini karyamu sendiri.');
+      try{ const n=await gs('sukaiKarya',k.email);
+        if(n){ k.suka=n; k.sayaSuka=true; bangunGaleri(); pesan('Terima kasih sudah memberi apresiasi.'); }
+        else pesan('Kamu sudah menyukai karya ini.');
+      }catch(e){ pesan(e.message); } });
+    g.classList.add('zd');
+  });
+  $('hal').textContent=`${halaman+1}/${maks+1}`;
+}
+async function muatGaleri(){ galeri = await gs('getGallery'); }
+setInterval(async()=>{ if(zonaAktif!=='D'||document.hidden||!token) return; try{ await muatGaleri(); bangunGaleri(); }catch(e){} }, 45000);
+$('prev').onclick=()=>{ if(halaman>0){ halaman--; bangunGaleri(); } };
+$('next').onclick=()=>{ halaman++; bangunGaleri(); };
+
+/* Zona C */
+$('buat').onclick = async () => {
+  const t=$('tema').value.trim(); if(!t) return pesan('Isi tema karya dahulu.');
+  $('buat').disabled=true; $('hasil').textContent='Sedang membuat gambar (sekitar 10-30 detik)...';
+  try{
+    draf = await gs('generateArt', t, $('aliran').value, $('palet').value, $('detail').value);
+    $('hasil').innerHTML=`<img src="${draf.url}" alt="Hasil gambar"><p>Sisa jatah hari ini: ${draf.sisa}</p>
+      <button id="pajang">Pajang di pameran</button> <button id="ulang" class="alt">Coba lagi</button>`;
+    $('pajang').onclick=async(ev)=>{ ev.target.disabled=true;
+      try{ const st=await gs('pajangKarya',draf.url,draf.prompt);
+        pesan(st==='disetujui'?'Karya dipajang di Galeri Bersama.':'Karya dikirim ke guru dan tampil setelah disetujui.',7000);
+        $('hasil').textContent=''; await muatGaleri(); bangunGaleri(); pindah('D');
+      }catch(e){ ev.target.disabled=false; pesan(e.message); } };
+    $('ulang').onclick=async(ev)=>{ ev.target.disabled=true;
+      try{ await gs('arsipkanKarya',draf.url,draf.prompt); $('hasil').textContent='Karya disimpan ke arsip. Ubah isian lalu buat lagi.'; }
+      catch(e){ ev.target.disabled=false; pesan(e.message); } };
+  }catch(e){ $('hasil').textContent=e.message; }
+  $('buat').disabled=false;
+};
+
+/* Multiplayer (Firebase) - hemat bandwidth:
+   - kirim posisi maksimal 1x/detik, dan hanya jika benar-benar bergerak/menoleh
+   - dengarkan perubahan per-pemain (child_*), bukan seluruh node 'posisi' */
+function mulaiMultiplayer(){
+  if(!FB.databaseURL) return pesan('Firebase belum dikonfigurasi: multiplayer nonaktif.',6000);
+  firebase.initializeApp(FB); db=firebase.database();
+  const id=saya.email.replace(/[.#$\[\]@]/g,'_'), ref=db.ref('posisi/'+id);
+  ref.onDisconnect().remove();
+  const r2=v=>Math.round(v*100)/100;
+  let last=null;
+  const kirim=()=>{ if(document.hidden) return;
+    const p=$('rig').object3D.position, ry=$('cam').object3D.rotation.y;
+    const cur={x:r2(p.x),y:r2(p.y),z:r2(p.z),ry:r2(ry)};
+    if(last && Math.abs(cur.x-last.x)<0.1 && Math.abs(cur.z-last.z)<0.1 && Math.abs(cur.ry-last.ry)<0.1) return;
+    last=cur; ref.set(Object.assign({n:saya.nama,c:saya.avatar,t:Date.now()},cur)); };
+  kirim(); setInterval(kirim,1000);
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) ref.remove(); else { last=null; kirim(); } });
+
+  const lain={};
+  const taruh=s=>{ const k=s.key; if(k===id) return; const o=s.val(); if(!o) return;
+    if(!lain[k]){ const e=document.createElement('a-entity'), w=/^#[0-9a-f]{6}$/i.test(o.c)?o.c:'#888888';
+      const t=(tag,at)=>{ const x=document.createElement(tag); for(const q in at) x.setAttribute(q,at[q]); e.append(x); };
+      t('a-sphere',{radius:0.3,position:'0 1.5 0',color:w}); t('a-cylinder',{radius:0.25,height:1,position:'0 0.7 0',color:w});
+      t('a-text',{value:String(o.n).slice(0,40),align:'center',position:'0 2 0',width:3,side:'double'});
+      $('lain').append(e); lain[k]=e; }
+    lain[k].setAttribute('position',`${Number(o.x)||0} 0 ${Number(o.z)||0}`);
+    lain[k].setAttribute('rotation',`0 ${(Number(o.ry)||0)*57.3} 0`); };
+  db.ref('posisi').on('child_added',taruh);
+  db.ref('posisi').on('child_changed',taruh);
+  db.ref('posisi').on('child_removed',s=>{ const e=lain[s.key]; if(e){ e.remove(); delete lain[s.key]; } });
+}
+</script>
+</body>
+</html>
