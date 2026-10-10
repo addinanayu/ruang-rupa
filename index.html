@@ -42,6 +42,8 @@
   <p id="akun" style="margin:0 0 8px;font-size:13px;color:#555"></p>
   <label for="nama">Nama panggilan</label>
   <input id="nama" maxlength="40" style="width:100%;padding:6px;box-sizing:border-box">
+  <div id="kelasBox" style="display:none"><label for="kelas">Kelas</label>
+  <select id="kelas" style="width:100%;padding:6px;box-sizing:border-box"></select></div>
   <p>Pilih avatar</p>
   <div id="avatars" style="display:flex;gap:8px"></div>
   <p><button id="masuk">Masuk pameran</button> <button id="keluar" class="alt">Ganti akun</button></p>
@@ -119,7 +121,9 @@ async function setelahLogin(t){
   token=t; try{ sessionStorage.setItem('rr_token',t); }catch(e){}
   try{
     const r=await gs('getProfile');
-    saya.email=r.email; $('akun').textContent='Masuk sebagai '+r.email;
+    saya.email=r.email; saya.peran=r.peran; saya.kelas=r.kelas; $('akun').textContent='Masuk sebagai '+r.email;
+    if(r.perluKelas){ const ks=await gs('getKelasAktif'), sel=$('kelas'); sel.innerHTML=''; sel.add(new Option('Pilih kelas...',''));
+      ks.forEach(k=>sel.add(new Option(k.nama,k.id))); $('kelasBox').style.display='block'; } else $('kelasBox').style.display='none';
     if(r.profile){ $('nama').value=r.profile.nama; saya.avatar=r.profile.avatar; tandaiAvatar(); }
     $('login').style.display='none'; $('lobi').style.display='block';
   }catch(e){ if(token) pesan(e.message,9000); }
@@ -150,11 +154,13 @@ AVATAR.forEach(([n,c])=>{ const b=document.createElement('button'); b.textConten
 tandaiAvatar();
 $('masuk').onclick = async () => {
   saya.nama = $('nama').value.trim(); if(!saya.nama) return pesan('Isi nama panggilan dahulu.');
+  if($('kelasBox').style.display==='block'&&!$('kelas').value) return pesan('Pilih kelas dahulu.');
   $('masuk').disabled = true;
   try{
+    if($('kelasBox').style.display==='block'){ await gs('pilihKelas',$('kelas').value); $('kelasBox').style.display='none'; }
     await gs('saveAvatar', saya.nama, saya.avatar);
     $('lobi').style.display='none'; $('hud').style.display='flex';
-    await muatGaleri(); await bangunMuseum(); bangunGaleri(); mulaiMultiplayer(); pindah('A');
+    await muatGaleri(); await bangunMuseum(); bangunGaleri(); mulaiMultiplayer(); pindah('A'); if(window.siapkanAdmin) siapkanAdmin();
   }catch(e){ $('masuk').disabled=false; pesan(e.message,8000); }
 };
 
@@ -245,5 +251,6 @@ function mulaiMultiplayer(){
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
 <script src="museum.js?v=1.06"></script>
+<script src="admin.js?v=2.01"></script>
 </body>
 </html>
