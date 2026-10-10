@@ -91,7 +91,7 @@ const FB = { apiKey:'', authDomain:'ruang-rupa.firebaseapp.com', databaseURL:'ht
 
 const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
 let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
-let halaman = 0, zonaAktif = 'A'; const PER = 12;
+let halaman = 0, zonaAktif = 'A', sudahMasuk = false; const PER = 12;
 const $ = id => document.getElementById(id);
 function pesan(t, ms=4000){ const p=$('pesan'); p.textContent=t; p.style.display='block'; clearTimeout(pesan.t); pesan.t=setTimeout(()=>p.style.display='none',ms); }
 
@@ -110,21 +110,23 @@ async function gs(fn, ...args){
 
 /* ----- Login Google ----- */
 function keLogin(info){
-  token=''; try{ sessionStorage.removeItem('rr_token'); }catch(e){}
+  sudahMasuk=false; token=''; try{ sessionStorage.removeItem('rr_token'); }catch(e){}
   $('lobi').style.display='none'; $('hud').style.display='none'; $('studio').style.display='none';
   $('login').style.display='block'; $('masuk').disabled=false;
   if(info) pesan(info,7000);
 }
 function bacaToken(t){ try{ const p=JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); return p; }catch(e){ return null; } }
 async function setelahLogin(t){
+  if(sudahMasuk) return;   // cegah callback Google ganda memunculkan lobi lagi
   const p=bacaToken(t); if(!p||p.exp*1000<Date.now()) return keLogin('Sesi habis. Masuk lagi dengan Google.');
   token=t; try{ sessionStorage.setItem('rr_token',t); }catch(e){}
   try{
     const r=await gs('getProfile');
-    saya.email=r.email; saya.peran=r.peran; saya.kelas=r.kelas; $('akun').textContent='Masuk sebagai '+r.email;
+    saya.email=r.email; saya.peran=r.peran; saya.kelas=r.kelas; $('akun').textContent='Masuk sebagai '+r.email.replace('#pw',' (akun sandi)');
     if(r.perluKelas){ const ks=await gs('getKelasAktif'), sel=$('kelas'); sel.innerHTML=''; sel.add(new Option('Pilih kelas...',''));
       ks.forEach(k=>sel.add(new Option(k.nama,k.id))); $('kelasBox').style.display='block'; } else $('kelasBox').style.display='none';
     if(r.profile){ $('nama').value=r.profile.nama; saya.avatar=r.profile.avatar; tandaiAvatar(); }
+    if(sudahMasuk) return;
     $('login').style.display='none'; $('lobi').style.display='block';
   }catch(e){ if(token) pesan(e.message,9000); }
 }
@@ -159,9 +161,9 @@ $('masuk').onclick = async () => {
   try{
     if($('kelasBox').style.display==='block'){ await gs('pilihKelas',$('kelas').value); $('kelasBox').style.display='none'; }
     await gs('saveAvatar', saya.nama, saya.avatar);
-    $('lobi').style.display='none'; $('hud').style.display='flex';
-    await muatGaleri(); await bangunMuseum(); bangunGaleri(); mulaiMultiplayer(); pindah('A'); if(window.siapkanAdmin) siapkanAdmin();
-  }catch(e){ $('masuk').disabled=false; pesan(e.message,8000); }
+    $('lobi').style.display='none'; $('hud').style.display='flex'; sudahMasuk=true;
+    await muatGaleri(); await bangunMuseum(); bangunGaleri(); mulaiMultiplayer(); pindah('A'); if(window.siapkanAdmin) siapkanAdmin(); $('lobi').style.display='none';
+  }catch(e){ $('masuk').disabled=false; sudahMasuk=false; $('hud').style.display='none'; $('lobi').style.display='block'; pesan(e.message,8000); }
 };
 
 /* Zona */
@@ -250,7 +252,8 @@ function mulaiMultiplayer(){
 }
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=1.06"></script>
-<script src="admin.js?v=2.01"></script>
+<script src="museum.js?v=1.07"></script>
+<script src="admin.js?v=2.02"></script>
+<script src="akun.js?v=2.02"></script>
 </body>
 </html>
