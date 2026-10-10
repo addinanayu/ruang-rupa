@@ -1,10 +1,10 @@
-/* Museum Ruang Rupa - Tahap 1 (v1.03). Dimuat SETELAH skrip utama di index.html.
+/* Museum Ruang Rupa - Tahap 1 (v1.04). Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
 let koleksi = [], bingkaiAktif = -1, daftarBingkai = [], dekatPintu = false, dariAtas = false, simpanPos = null;
 const kurangiGerak = matchMedia('(prefers-reduced-motion: reduce)').matches;
-POS.A = [0, 0, 16];
+POS.A = [0, 0, 16]; POS.C = [-5, 0, -5];   // Studio AI sekarang di sudut barat aula (di dalam gedung)
 
 /* ---------- UI: panel info + layar fade (HTML, bukan teks 3D) ---------- */
 document.head.insertAdjacentHTML('beforeend', `<style>
@@ -59,6 +59,7 @@ function bangunGedung(g){
     el(g,'a-text',{value:n,align:'center',width:5,position:`${x+(x<0?0.3:-0.3)} 2 -6`,rotation:`0 ${ry} 0`,color:'#fff'});
     p.addEventListener('click',()=>pindah(z));
   });
+  kotak(g,-6.5,0.05,-6,5,0.04,6,'#8a6a3c');                        // karpet area Studio AI
   // lampu hangat palsu (tanpa bayangan)
   el(g,'a-light',{type:'point',color:'#ffe2b0',intensity:0.5,distance:20,position:'0 6 -6'});
   el(g,'a-light',{type:'point',color:'#fff4dc',intensity:0.6,distance:24,position:'0 6 -19'});
