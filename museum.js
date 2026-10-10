@@ -1,4 +1,4 @@
-/* Museum Ruang Rupa - Tahap 1 (v1.04). Dimuat SETELAH skrip utama di index.html.
+/* Museum Ruang Rupa - Tahap 1 (v1.05). Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -36,13 +36,13 @@ const teks = (p,v,x,y,z,w,c='#222',ry=0) => el(p,'a-text',{value:v,align:'center
 /* ---------- Gedung: plaza, fasad, pintu, aula ---------- */
 function bangunGedung(g){
   const batu = '#d8cdb8', gelap = '#4a3f33';
-  kotak(g,0,0.02,12,40,0.04,22,'#bfb5a0');                          // plaza
+  kotak(g,0,0.02,12,40,0.04,22,'#bfb5a0',{class:'klik lantai'});                          // plaza
   [0.2,0.6,1.0].forEach((t,i)=>kotak(g,0,t/2+0.0,3.2-i*0.9+0.9,12-i*1.2,t,1.6,batu)); // tangga
   // dinding depan (celah pintu di tengah, lebar 3, tinggi 4)
   kotak(g,-6.25,4,0,7.5,8,0.6,batu); kotak(g,6.25,4,0,7.5,8,0.6,batu); kotak(g,0,6,0,5,4,0.6,batu);
   kotak(g,-10,4,-13,0.6,8,26,batu); kotak(g,10,4,-13,0.6,8,26,batu); kotak(g,0,4,-26,20.6,8,0.6,batu); // sisi + belakang
   kotak(g,0,8.3,-12,22,0.6,28,gelap);                               // atap
-  kotak(g,0,0.02,-13,20,0.04,26,'#e9e1d0');                         // lantai dalam
+  kotak(g,0,0.02,-13,20,0.04,26,'#e9e1d0',{class:'klik lantai'});                         // lantai dalam
   for(let i=-4;i<=4;i+=2){ if(i===0) continue; const c=el(g,'a-cylinder',{position:`${i*1.9} 4 1.6`,radius:0.4,height:8,color:'#efe8d9'}); }
   kotak(g,0,10,0.4,10,1.6,0.3,'#2b2118'); teks(g,'RUANG RUPA',0,10,0.6,12,'#f3e6c8');
   kotak(g,0,6.3,-0.1,3,0.4,0.4,gelap);
@@ -52,14 +52,17 @@ function bangunGedung(g){
   // dinding aula/ruang: sekat antara aula (z 0..-12) dan Ruang Maestro (z -12..-26), celah pintu tengah
   kotak(g,-5.75,4,-12,8.5,8,0.4,batu); kotak(g,5.75,4,-12,8.5,8,0.4,batu); kotak(g,0,6,-12,3,4,0.4,batu);
   // aula: papan denah + penunjuk
-  kotak(g,0,2.2,-2.5,4.4,2.8,0.2,gelap); teks(g,'DENAH',0,3.3,-2.38,4); 
-  teks(g,'Utara: Ruang Maestro (Impresionisme)\nBarat: Studio AI\nTimur: Galeri Bersama',0,2.2,-2.38,3.2);
+  kotak(g,-6.5,2.2,-2.5,4.4,2.8,0.2,gelap); teks(g,'DENAH',-6.5,3.3,-2.38,4); 
+  teks(g,'Utara: Ruang Maestro (Impresionisme)\nBarat: Studio AI\nTimur: Galeri Bersama',-6.5,2.2,-2.38,3.2);
   [['Studio AI',-9.6,'C',90],['Galeri Bersama',9.6,'D',-90]].forEach(([n,x,z,ry])=>{
     const p = el(g,'a-box',{position:`${x} 2 -6`,width:0.3,height:2.4,depth:3,color:'#8a6a3c',class:'klik'});
     el(g,'a-text',{value:n,align:'center',width:5,position:`${x+(x<0?0.3:-0.3)} 2 -6`,rotation:`0 ${ry} 0`,color:'#fff'});
     p.addEventListener('click',()=>pindah(z));
   });
   kotak(g,-6.5,0.05,-6,5,0.04,6,'#8a6a3c');                        // karpet area Studio AI
+  kotak(g,0,0.06,-7,0.6,0.04,9,'#d9a21b');                           // jalur emas ke pintu Ruang Maestro
+  kotak(g,-1.6,2,-12,0.2,4,0.5,gelap); kotak(g,1.6,2,-12,0.2,4,0.5,gelap); // kusen pintu
+  kotak(g,0,5.6,-11.7,6.5,1.4,0.2,gelap); teks(g,'RUANG MAESTRO',0,5.8,-11.55,9,'#f3e6c8'); teks(g,'Impresionisme',0,5.3,-11.55,5,'#f3e6c8');
   // lampu hangat palsu (tanpa bayangan)
   el(g,'a-light',{type:'point',color:'#ffe2b0',intensity:0.5,distance:20,position:'0 6 -6'});
   el(g,'a-light',{type:'point',color:'#fff4dc',intensity:0.6,distance:24,position:'0 6 -19'});
@@ -95,7 +98,7 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw){
 }
 function bangunRuangMaestro(g){
   daftarBingkai = [];
-  kotak(g,0,0.03,-19,19,0.04,13,'#f1ede4'); teks(g,RUANG_TAHAP1.toUpperCase(),0,6.5,-25.6,6,'#6b6458');
+  kotak(g,0,0.03,-19,19,0.04,13,'#f1ede4',{class:'klik lantai'}); teks(g,RUANG_TAHAP1.toUpperCase(),0,6.5,-25.6,6,'#6b6458');
   const data = koleksi.filter(k=>k.ruang===RUANG_TAHAP1).sort((a,b)=>a.urutan-b.urutan).slice(0,8);
   // 4 di dinding barat (menghadap timur), 4 di dinding timur (menghadap barat)
   for(let i=0;i<8;i++){ const barat=i<4, z=-14.5-(i%4)*3.2;
@@ -153,4 +156,31 @@ async function bangunMuseum(){
   const d=$('dunia'); d.querySelectorAll('.zm').forEach(e=>e.remove());
   const g=document.createElement('a-entity'); g.classList.add('zm'); d.append(g);
   bangunGedung(g); bangunRuangMaestro(g); spanduk(g);
+  g.querySelectorAll('.lantai').forEach(f=>f.addEventListener('click',e=>{ if(e.detail&&e.detail.intersection) jalanKe(e.detail.intersection.point); }));
 }
+
+/* ---------- v1.05: berjalan lebih natural ---------- */
+/* Dinding padat [x1,x2,z1,z2], sudah ditambah jari-jari badan 0.4. Celah pintu tetap bebas. */
+const SOLID = [[-10.7,-2.1,-0.7,0.7],[2.1,10.7,-0.7,0.7],[-10.7,-9.3,-26.7,0.7],[9.3,10.7,-26.7,0.7],[-10.7,10.7,-26.7,-25.3],
+  [-10.7,-1.1,-12.6,-11.4],[1.1,10.7,-12.6,-11.4],[-9.1,-3.9,-3.0,-2.0]];
+const dalamPadat = (x,z)=>SOLID.some(s=>x>s[0]&&x<s[1]&&z>s[2]&&z<s[3]);
+let prevPos = null;
+(function cekTabrak(){ requestAnimationFrame(cekTabrak);
+  if(dariAtas||bingkaiAktif>=0||!token){ prevPos=null; return; }
+  const p=$('rig').object3D.position;
+  if(prevPos && dalamPadat(p.x,p.z)){            // geser menyusuri dinding, bukan menembusnya
+    if(!dalamPadat(prevPos.x,p.z)) p.x=prevPos.x; else if(!dalamPadat(p.x,prevPos.z)) p.z=prevPos.z; else { p.x=prevPos.x; p.z=prevPos.z; } }
+  prevPos={x:p.x,z:p.z}; })();
+
+/* Ketuk/klik lantai = berjalan halus ke titik itu */
+function jalanKe(pt){
+  if(dariAtas||bingkaiAktif>=0) return;
+  const rig=$('rig'), p=rig.object3D.position, x0=p.x, z0=p.z, d=Math.hypot(pt.x-x0,pt.z-z0);
+  tween(0,1,kurangiGerak?0:Math.min(1800,d*170),u=>rig.setAttribute('position',`${x0+(pt.x-x0)*u} 0 ${z0+(pt.z-z0)*u}`));
+}
+
+/* Tombol pintas ke Ruang Maestro + label tombol atas ikut benar saat pindah zona */
+const pindahAsli = pindah;
+pindah = function(z){ if(dariAtas){ dariAtas=false; $('bAtas').textContent='Lihat dari atas'; } pindahAsli(z); };
+$('hud').insertAdjacentHTML('beforeend','<button id="bMaestro" class="alt">Ruang Maestro</button>');
+$('bMaestro').onclick=()=>{ bukaPintu(true); fadeKe(()=>{ pindah('A'); $('rig').setAttribute('position','0 0 -14.5'); arahKamera(0,0); }); };
