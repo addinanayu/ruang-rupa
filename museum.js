@@ -1,4 +1,4 @@
-/* Museum Ruang Rupa - Tahap 1 (v1.01). Dimuat SETELAH skrip utama di index.html.
+/* Museum Ruang Rupa - Tahap 1 (v1.02). Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -44,7 +44,7 @@ function bangunGedung(g){
   kotak(g,0,8.3,-12,22,0.6,28,gelap);                               // atap
   kotak(g,0,0.02,-13,20,0.04,26,'#e9e1d0');                         // lantai dalam
   for(let i=-4;i<=4;i+=2){ if(i===0) continue; const c=el(g,'a-cylinder',{position:`${i*1.9} 4 1.6`,radius:0.4,height:8,color:'#efe8d9'}); }
-  kotak(g,0,9.2,0.4,10,1.6,0.3,'#2b2118'); teks(g,'RUANG RUPA',0,9.2,0.6,12,'#f3e6c8');
+  kotak(g,0,10,0.4,10,1.6,0.3,'#2b2118'); teks(g,'RUANG RUPA',0,10,0.6,12,'#f3e6c8');
   kotak(g,0,6.3,-0.1,3,0.4,0.4,gelap);
   // pintu dua daun; tiap daun bergeser ke samping saat terbuka
   const pk = el(g,'a-box',{id:'daunK',position:'-0.75 2 0.1',width:1.5,height:4,depth:0.2,color:'#6d4a2b'});
@@ -141,7 +141,7 @@ $('bAtas').onclick = ()=>{
 function spanduk(g){
   const ada = koleksi.filter(k=>k.status==='terbit'||true).slice(0,3);
   [-7.5,0,7.5].forEach((x,i)=>{ const k=ada[i], f=el(g,'a-entity',{position:`${x} 5.2 0.5`});
-    if(x===0) f.setAttribute('position','0 8.2 0.45');  // tengah ditaruh di atas lintel agar tidak menutup pintu
+    if(x===0) f.setAttribute('position','0 6 0.45');  // tengah: di atas pintu, di dalam area lintel
     el(f,'a-plane',{width:2.2,height:2.8,color:k&&WARNA[k.aliran]||'#9a9082'});
     el(f,'a-text',{value:k?k.judul:'Segera hadir',align:'center',width:2,wrapCount:14,position:'0 0 0.02',color:'#fff'}); });
 }
