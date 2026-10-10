@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.04 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.05 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -44,7 +44,7 @@ function bangunGedung(g){
   kotak(g,0,8.3,-12,22,0.6,28,gelap);                               // atap
   kotak(g,0,0.02,-13,20,0.04,26,'#e9e1d0',{class:'klik lantai'});                         // lantai dalam
   for(let i=-4;i<=4;i+=2){ if(i===0) continue; const c=el(g,'a-cylinder',{position:`${i*1.9} 4 1.6`,radius:0.4,height:8,color:'#efe8d9'}); }
-  kotak(g,0,10,0.4,10,1.6,0.3,'#2b2118'); teks(g,'RUANG RUPA',0,10,0.6,12,'#f3e6c8');
+  kotak(g,0,10,0.4,10,1.6,0.3,'#2b2118'); teksTimbul(g,'RUANG RUPA',0,10,0.62,18,'#f3e6c8');
   kotak(g,0,6.3,-0.1,3,0.4,0.4,gelap);
   // pintu dua daun; tiap daun bergeser ke samping saat terbuka
   const pk = el(g,'a-box',{id:'daunK',position:'-0.75 2 0.1',width:1.5,height:4,depth:0.2,color:'#6d4a2b'});
@@ -52,7 +52,7 @@ function bangunGedung(g){
   // dinding aula/ruang: sekat antara aula (z 0..-12) dan Ruang Maestro (z -12..-26), celah pintu tengah
   kotak(g,-5.75,4,-12,8.5,8,0.4,batu); kotak(g,5.75,4,-12,8.5,8,0.4,batu); kotak(g,0,6,-12,3,4,0.4,batu);
   // aula: papan denah + penunjuk
-  kotak(g,-6.5,2.2,-2.5,4.4,2.8,0.2,gelap); teks(g,'DENAH',-6.5,3.3,-2.38,8); 
+  kotak(g,-6.5,2.2,-2.5,4.4,2.8,0.2,gelap); teksTimbul(g,'DENAH',-6.5,3.3,-2.38,8,'#f3e6c8'); 
   teks(g,'Utara: Museum KEUN\nBarat: Studio AI\nTimur: Galeri Bersama',-6.5,2.2,-2.38,6);
   [['Studio AI',-9.6,'C',90],['Galeri Bersama',9.6,'D',-90]].forEach(([n,x,z,ry])=>{
     const p = el(g,'a-box',{position:`${x} 2 -6`,width:0.3,height:2.4,depth:3,color:'#8a6a3c',class:'klik'});
@@ -62,7 +62,7 @@ function bangunGedung(g){
   kotak(g,-6.5,0.05,-6,5,0.04,6,'#8a6a3c');                        // karpet area Studio AI
   kotak(g,0,0.06,-7,0.6,0.04,9,'#d9a21b');                           // jalur emas ke pintu Ruang Maestro
   kotak(g,-1.6,2,-12,0.2,4,0.5,gelap); kotak(g,1.6,2,-12,0.2,4,0.5,gelap); // kusen pintu
-  kotak(g,0,5.6,-11.7,6.5,1.4,0.2,gelap); teks(g,'MUSEUM KEUN',0,5.9,-11.55,20,'#f3e6c8'); teks(g,'Kurator : Diah Ayu Kurniawati',0,5.2,-11.55,8,'#f3e6c8');
+  kotak(g,0,5.6,-11.7,6.5,1.4,0.2,gelap); teksTimbul(g,'MUSEUM KEUN',0,5.9,-11.55,20,'#f3e6c8'); teks(g,'Kurator : Diah Ayu Kurniawati',0,5.2,-11.55,8,'#f3e6c8');
   // lampu hangat palsu (tanpa bayangan)
   el(g,'a-light',{type:'point',color:'#ffe2b0',intensity:0.5,distance:20,position:'0 6 -6'});
   el(g,'a-light',{type:'point',color:'#fff4dc',intensity:0.6,distance:24,position:'0 6 -19'});
@@ -75,7 +75,7 @@ function bukaPintu(buka){
     d.removeAttribute('animation'); d.setAttribute('animation',{property:'position',to:`${s*ke} 2 0.1`,dur:t}); });
 }
 function fadeKe(fn){ const f=$('fade'); f.style.opacity=1; setTimeout(()=>{ fn(); f.style.opacity=0; }, kurangiGerak?0:500); }
-function masukGedung(){ bukaPintu(true); fadeKe(()=>{ $('rig').setAttribute('position','0 0 -4'); }); }
+function masukGedung(){ bukaPintu(true); fadeKe(()=>{ batalJalan(); $('rig').setAttribute('position','0 0 -4'); }); }
 $('bMasuk').onclick = masukGedung;
 setInterval(()=>{ if(zonaAktif!=='A'||!token) return; const p=$('rig').object3D.position;
   const d = p.z<12 && p.z>-1.5 && Math.abs(p.x)<4; if(d!==dekatPintu){ dekatPintu=d; bukaPintu(d||p.z<=0); } }, 250);
@@ -89,16 +89,20 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw){
     'aria-label':kosong?'Bingkai kosong':`${k.judul}, ${k.pelukis}`});
   if(k && k.gambar){ const im=el(f,'a-image',{width:2.5,height:1.9,position:'0 0 0.08',src:k.gambar,class:'klik'});
     im.addEventListener('click',()=>{ if(klikSah()) buka(i); }); im.addEventListener('error',()=>im.remove()); }
-  el(f,'a-text',{value:kosong?'Segera hadir':k.judul,align:'center',width:2.4,wrapCount:14,position:'0 0 0.1',color:kosong?'#6b6458':'#fff'});
-  el(f,'a-text',{value:String(i+1),align:'center',width:6,position:'0 -1.55 0.05',color:'#444'});
-  el(f,'a-box',{width:0.5,height:0.06,depth:0.3,position:'0 1.45 0.2',color:'#fff4d8'});   // lampu sorot (kotak sederhana)
+  if(kosong) el(f,'a-text',{value:'Segera hadir',align:'center',width:2.4,wrapCount:14,position:'0 0 0.1',color:'#6b6458'});
+  el(f,'a-box',{width:3.1,height:0.62,depth:0.06,position:'0 -1.62 0.06',color:'#2b2118'});                       // papan nama di bawah lukisan
+  teks(f,'No. '+(i+1)+(kosong?'  Segera hadir':'  '+k.judul),0,-1.51,0.1,3.4,'#f3e6c8');
+  if(!kosong) teks(f,[k.pelukis,k.tahun].filter(Boolean).join(', '),0,-1.74,0.1,3.0,'#d9c9a3');
+  el(f,'a-box',{width:0.06,height:0.06,depth:0.35,position:'0 1.3 0.2',color:'#2b2118'});                         // lampu sorot lukisan: lengan + kap + cahaya palsu (ringan)
+  el(f,'a-cone',{position:'0 1.3 0.38','radius-bottom':0.16,'radius-top':0.05,height:0.2,rotation:'-35 0 0',color:'#d9a21b'});
+  el(f,'a-plane',{width:3.4,height:3,position:'0 0.2 0.09',material:{src:cahaya(),transparent:true,blending:'additive',opacity:0.5,depthWrite:false,shader:'flat'}});
   el(f,'a-text',{id:'tanda'+i,value:'',align:'center',width:4,position:'1.1 1.0 0.12',color:'#ffd54a'}); // tempat centang (Tahap 3)
   if(k) kanvas.addEventListener('click',()=>{ if(klikSah()) buka(i); });
   daftarBingkai[i] = { x, z, ry, yaw, k };
 }
 function bangunRuangMaestro(g){
   daftarBingkai = [];
-  kotak(g,0,0.03,-19,19,0.04,13,'#f1ede4',{class:'klik lantai'}); teks(g,RUANG_TAHAP1.toUpperCase(),0,6.5,-25.6,14,'#3a2f26');
+  kotak(g,0,0.03,-19,19,0.04,13,'#f1ede4',{class:'klik lantai'}); teksTimbul(g,RUANG_TAHAP1.toUpperCase(),0,6.5,-25.6,14,'#c9902f');
   const data = koleksi.filter(k=>k.ruang===RUANG_TAHAP1).sort((a,b)=>a.urutan-b.urutan).slice(0,8);
   // 4 di dinding barat (menghadap timur), 4 di dinding timur (menghadap barat)
   for(let i=0;i<8;i++){ const barat=i<4, z=-14.5-(i%4)*3.2;
@@ -112,6 +116,7 @@ function tween(dari, ke, ms, fn){ if(!ms){ fn(ke); return; } const t0=performanc
 function arahKamera(yaw, pitch){ const lc=$('cam').components['look-controls']; if(lc){ lc.yawObject.rotation.y=yaw; lc.pitchObject.rotation.x=pitch||0; } }
 function buka(i){
   const b = daftarBingkai[i]; if(!b||!b.k) return;
+  if($('scene').is('vr-mode')){ kartuVR(b.k); return; }   // di VR panel HTML tidak terlihat: pakai kartu 3D
   if(bingkaiAktif<0){ const p=$('rig').object3D.position; simpanPos={x:p.x,z:p.z}; }
   bingkaiAktif = i; const k = b.k, rig = $('rig'), p = rig.object3D.position;
   rig.setAttribute('wasd-controls','enabled',false);
@@ -155,7 +160,7 @@ async function bangunMuseum(){
   try{ koleksi = await gs('getKoleksi'); }catch(e){ koleksi=[]; pesan('Koleksi belum bisa dimuat: '+e.message,6000); }
   const d=$('dunia'); d.querySelectorAll('.zm').forEach(e=>e.remove());
   const g=document.createElement('a-entity'); g.classList.add('zm'); d.append(g);
-  bangunGedung(g); bangunRuangMaestro(g); bangunPatung(g); spanduk(g);
+  bangunGedung(g); bangunRuangMaestro(g); bangunPatung(g); bangunDekor(g); spanduk(g);
   g.querySelectorAll('.lantai').forEach(f=>f.addEventListener('click',e=>{ if(e.detail&&e.detail.intersection) jalanKe(e.detail.intersection.point); }));
 }
 
@@ -167,23 +172,32 @@ const SOLID_DASAR = SOLID.length;
 const dalamPadat = (x,z)=>SOLID.some(s=>x>s[0]&&x<s[1]&&z>s[2]&&z<s[3]);
 let prevPos = null;
 (function cekTabrak(){ requestAnimationFrame(cekTabrak);
+  const yy=$('rig').object3D.position.y;   // status 'dari atas' dibaca dari tinggi kamera, jadi tabrakan tidak pernah tertinggal mati
+  if((yy>5)!==dariAtas){ dariAtas=yy>5; $('bAtas').textContent=dariAtas?'Turun ke plaza':'Lihat dari atas'; }
   if(dariAtas||bingkaiAktif>=0||!token){ prevPos=null; return; }
+  putarKunci();
   gerakJoy();
   const p=$('rig').object3D.position;
   if(prevPos && dalamPadat(p.x,p.z)){            // geser menyusuri dinding, bukan menembusnya
     if(!dalamPadat(prevPos.x,p.z)) p.x=prevPos.x; else if(!dalamPadat(p.x,prevPos.z)) p.z=prevPos.z; else { p.x=prevPos.x; p.z=prevPos.z; } }
   prevPos={x:p.x,z:p.z}; })();
 
-/* Ketuk/klik lantai = berjalan halus ke titik itu */
+/* Klik lantai = berjalan halus. Jalur dipotong di dinding pertama (tidak bisa menembus). Di HP dimatikan: hanya joystick. */
+let jalanId=0; function batalJalan(){ jalanId++; }
 function jalanKe(pt){
   if(dariAtas||bingkaiAktif>=0) return;
-  const rig=$('rig'), p=rig.object3D.position, x0=p.x, z0=p.z, d=Math.hypot(pt.x-x0,pt.z-z0);
-  tween(0,1,kurangiGerak?0:Math.min(5000,d*550),u=>rig.setAttribute('position',`${x0+(pt.x-x0)*u} 0 ${z0+(pt.z-z0)*u}`));
+  if(sentuh&&!$('scene').is('vr-mode')) return;
+  const rig=$('rig'), p=rig.object3D.position, x0=p.x, z0=p.z, d0=Math.hypot(pt.x-x0,pt.z-z0), n=Math.max(1,Math.ceil(d0/0.25));
+  let aman=0; for(let k=1;k<=n;k++){ const u=k/n; if(dalamPadat(x0+(pt.x-x0)*u,z0+(pt.z-z0)*u)) break; aman=u; }
+  const tx=x0+(pt.x-x0)*aman, tz=z0+(pt.z-z0)*aman, d=Math.hypot(tx-x0,tz-z0); if(d<0.2) return;
+  const id=++jalanId, t0=performance.now(), ms=kurangiGerak?1:Math.min(5000,d*550);
+  (function s(t){ if(id!==jalanId) return; const u=Math.min(1,(t-t0)/ms), e=u<0.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+    rig.object3D.position.set(x0+(tx-x0)*e,0,z0+(tz-z0)*e); if(u<1) requestAnimationFrame(s); })(t0);
 }
 
 /* Tombol pintas ke Ruang Maestro + label tombol atas ikut benar saat pindah zona */
 const pindahAsli = pindah;
-pindah = function(z){ if(dariAtas){ dariAtas=false; $('bAtas').textContent='Lihat dari atas'; } pindahAsli(z); };
+pindah = function(z){ batalJalan(); if(dariAtas){ dariAtas=false; $('bAtas').textContent='Lihat dari atas'; } pindahAsli(z); };
 $('hud').insertAdjacentHTML('beforeend','<button id="bMaestro" class="alt">Museum KEUN</button>');
 $('bMaestro').onclick=()=>{ bukaPintu(true); fadeKe(()=>{ pindah('A'); $('rig').setAttribute('position','0 0 -14.5'); arahKamera(0,0); }); };
 
@@ -195,22 +209,24 @@ addEventListener('pointerup',()=>setTimeout(()=>{ awal=null; },0));
 function klikSah(){ return geser<10; }      // geser layar untuk menoleh tidak dihitung klik
 $('cam').setAttribute('look-controls','magicWindowTrackingEnabled',false);   // matikan giroskop HP (penyebab layar bergoyang)
 
-let joy={x:0,y:0}, tJoy=performance.now();
-if(matchMedia('(pointer:coarse)').matches){
+let joy={x:0,y:0}, tJoy=performance.now(), joyId=null;
+const sentuh = matchMedia('(pointer:coarse)').matches;
+if(sentuh){
   document.head.insertAdjacentHTML('beforeend','<style>#joy{position:fixed;left:18px;bottom:22px;width:116px;height:116px;border-radius:50%;background:#ffffff66;border:2px solid #ffffffaa;z-index:11;touch-action:none;display:none}#joy i{position:absolute;left:36px;top:36px;width:44px;height:44px;border-radius:50%;background:#2f6f8fcc}</style>');
   document.body.insertAdjacentHTML('beforeend','<div id="joy" role="application" aria-label="Kendali jalan"><i></i></div>');
-  const j=$('joy'), kn=j.firstChild; let pid=null;
-  const atur=e=>{ const r=j.getBoundingClientRect(); let dx=(e.clientX-r.left-58)/42, dy=(e.clientY-r.top-58)/42, m=Math.hypot(dx,dy);
-    if(m>1){ dx/=m; dy/=m; } joy={x:dx,y:-dy}; kn.style.transform=`translate(${dx*30}px,${dy*30}px)`; };
-  j.addEventListener('pointerdown',e=>{ pid=e.pointerId; j.setPointerCapture(pid); atur(e); e.preventDefault(); });
-  j.addEventListener('pointermove',e=>{ if(e.pointerId===pid) atur(e); });
-  const lepas=e=>{ if(e.pointerId===pid){ pid=null; joy={x:0,y:0}; kn.style.transform=''; } };
-  j.addEventListener('pointerup',lepas); j.addEventListener('pointercancel',lepas);
-  setInterval(()=>{ j.style.display=(token&&$('hud').style.display!=='none'&&bingkaiAktif<0&&!dariAtas)?'block':'none'; },400);
+  const j=$('joy'), kn=j.firstChild;
+  const atur=e=>{ const r=j.getBoundingClientRect(); let dx=(e.clientX-r.left-58)/42, dy=(e.clientY-r.top-58)/42, mg=Math.hypot(dx,dy);
+    if(mg>1){ dx/=mg; dy/=mg; } joy={x:dx,y:-dy}; kn.style.transform=`translate(${dx*30}px,${dy*30}px)`; };
+  const lepas=()=>{ joyId=null; joy={x:0,y:0}; kn.style.transform=''; };           // berhenti seketika saat jari dilepas
+  j.addEventListener('pointerdown',e=>{ joyId=e.pointerId; batalJalan(); j.setPointerCapture(joyId); atur(e); e.preventDefault(); });
+  j.addEventListener('pointermove',e=>{ if(e.pointerId===joyId) atur(e); });
+  ['pointerup','pointercancel','lostpointercapture'].forEach(n=>j.addEventListener(n,lepas));
+  addEventListener('blur',lepas); document.addEventListener('visibilitychange',lepas);
+  setInterval(()=>{ j.style.display=(token&&$('hud').style.display!=='none'&&bingkaiAktif<0&&!dariAtas)?'block':'none'; if(joyId===null&&(joy.x||joy.y)) lepas(); },300);
 }
-function gerakJoy(){   // joystick: kecepatan tetap 1,6 m/s, searah pandangan
+function gerakJoy(){   // joystick: kecepatan tetap 1,6 m/s, searah pandangan; berhenti bila tidak ada jari di joystick
   const n=performance.now(), dt=Math.min(0.05,(n-tJoy)/1000); tJoy=n;
-  if((!joy.x&&!joy.y)||bingkaiAktif>=0||dariAtas) return;
+  if(joyId===null||(!joy.x&&!joy.y)||bingkaiAktif>=0||dariAtas) return;
   const lc=$('cam').components['look-controls'], yaw=lc?lc.yawObject.rotation.y:0, p=$('rig').object3D.position, v=1.6*dt;
   p.x+=(-Math.sin(yaw)*joy.y+Math.cos(yaw)*joy.x)*v; p.z+=(-Math.cos(yaw)*joy.y-Math.sin(yaw)*joy.x)*v;
 }
@@ -233,7 +249,7 @@ const PATUNG=[
 function bangunPatung(g){
   SOLID.length=SOLID_DASAR;
   PATUNG.forEach((s,n)=>{
-    const i=8+n, z=s.z, w=el(g,'a-entity',{position:`0 0 ${z}`}); SOLID.push([-1.1,1.1,z-1.1,z+1.1]);
+    const i=8+n, z=s.z, w=el(g,'a-entity',{position:`0 0 ${z}`},'dekor'); SOLID.push([-1.1,1.1,z-1.1,z+1.1]);
     el(w,'a-box',{position:'0 0.5 0',width:1.2,height:1,depth:1.2,color:'#efe8d9'});
     el(w,'a-box',{position:'0 1.02 0',width:1.3,height:0.06,depth:1.3,color:'#d9a21b'});
     el(w,'a-text',{value:s.k.judul,align:'center',width:2.2,wrapCount:18,position:'0.62 0.55 0',rotation:'0 90 0',color:'#333'});
@@ -260,3 +276,85 @@ setInterval(()=>{
   if(di&&zonaAktif!=='C'){ zonaAktif='C'; $('studio').style.display='block'; }
   else if(!di&&zonaAktif==='C'){ zonaAktif='A'; $('studio').style.display='none'; }
 },300);
+
+/* ================= v2.05 ================= */
+/* Tulisan timbul: beberapa lapis bayangan gelap di belakang huruf depan */
+function teksTimbul(p,v,x,y,z,w,warna,ry=0){ for(let k=4;k>=1;k--) teks(p,v,x+0.012*k,y-0.012*k,z-0.012*k,w,'#3a2a12',ry); teks(p,v,x,y,z,w,warna,ry); }
+
+/* Cahaya lukisan palsu (bidang berpendar): ringan untuk HP, tanpa lampu sungguhan per lukisan */
+let texCahaya=null;
+function cahaya(){ if(texCahaya) return texCahaya;
+  const c=document.createElement('canvas'); c.width=128; c.height=128; const g=c.getContext('2d'), gr=g.createRadialGradient(64,64,4,64,64,62);
+  gr.addColorStop(0,'rgba(255,236,190,0.9)'); gr.addColorStop(1,'rgba(255,236,190,0)'); g.fillStyle=gr; g.fillRect(0,0,128,128); return texCahaya=c.toDataURL(); }
+
+/* Bayangan nyata: hidup di laptop, mati di HP (bisa diubah lewat tombol) */
+let bayangan = !sentuh;
+function aturBayangan(on){
+  bayangan=on; $('scene').setAttribute('shadow',{enabled:on,type:'pcf',autoUpdate:true});
+  const l=$('lampuBayang'); if(l) l.setAttribute('light','castShadow',on);
+  $('bBayang').textContent='Bayangan: '+(on?'Hidup':'Mati');
+}
+$('hud').insertAdjacentHTML('beforeend','<button id="bBayang" class="alt"></button>');
+$('bBayang').onclick=()=>aturBayangan(!bayangan);
+
+/* Tanaman dan bangku (bentuk dasar, ringan); ikut menjadi dinding padat */
+function tanaman(g,x,z,s,jenis){
+  const w=el(g,'a-entity',{position:`${x} 0 ${z}`,scale:`${s} ${s} ${s}`},'dekor');
+  el(w,'a-cylinder',{position:'0 0.3 0',radius:0.32,height:0.6,color:'#b5562f'}); el(w,'a-cylinder',{position:'0 0.61 0',radius:0.28,height:0.04,color:'#4a3a2a'});
+  if(jenis===1){ el(w,'a-cylinder',{position:'0 0.95 0',radius:0.04,height:0.7,color:'#5b4630'});
+    [[0,1.15,0,0.4],[0.22,1.5,0.1,0.3],[-0.2,1.4,-0.12,0.32],[0.05,1.8,-0.05,0.26]].forEach(([a,b,c,r])=>el(w,'a-sphere',{position:`${a} ${b} ${c}`,radius:r,color:'#2f7d3a','segments-width':8,'segments-height':6})); }
+  else { el(w,'a-cylinder',{position:'0 1.15 0',radius:0.05,height:1.1,color:'#6b5336'});
+    for(let a=0;a<6;a++){ const lf=el(w,'a-entity',{position:'0 1.7 0',rotation:`0 ${a*60} 0`}); el(lf,'a-cone',{position:'0 0.05 0.45',rotation:'70 0 0','radius-bottom':0.18,'radius-top':0.01,height:1.1,color:'#2f7d3a'}); } }
+  const r=0.72*s; SOLID.push([x-r,x+r,z-r,z+r]);
+}
+function bangku(g,x,z,ry){
+  const w=el(g,'a-entity',{position:`${x} 0 ${z}`,rotation:`0 ${ry} 0`},'dekor');
+  el(w,'a-box',{position:'0 0.45 0',width:1.8,height:0.1,depth:0.5,color:'#6d4a2b'});
+  [-0.75,0.75].forEach(a=>el(w,'a-box',{position:`${a} 0.22 0`,width:0.1,height:0.44,depth:0.45,color:'#3a2f26'}));
+  const hx=(ry%180===0?0.9:0.25)+0.4, hz=(ry%180===0?0.25:0.9)+0.4; SOLID.push([x-hx,x+hx,z-hz,z+hz]);
+}
+function bangunDekor(g){
+  el(g,'a-entity',{id:'tRuang',position:'0 0 -19'});
+  el(g,'a-entity',{id:'lampuBayang',position:'4 12 -14',light:'type:directional;color:#fff1d6;intensity:0.7;castShadow:true;shadowCameraLeft:-12;shadowCameraRight:12;shadowCameraTop:16;shadowCameraBottom:-16;shadowCameraNear:1;shadowCameraFar:40;shadowMapWidth:1024;shadowMapHeight:1024;target:#tRuang'});
+  // lampu gantung (hiasan; cahaya asli datang dari lampu titik di aula dan ruang)
+  [[0,-4],[0,-9],[0,-15],[0,-19.5],[0,-24]].forEach(([x,z])=>{ el(g,'a-cylinder',{position:`${x} 7.7 ${z}`,radius:0.015,height:0.6,color:'#222'});
+    el(g,'a-sphere',{position:`${x} 7.1 ${z}`,radius:0.28,material:'color:#fff1c8;emissive:#ffd98a;emissiveIntensity:1','segments-width':12,'segments-height':8}); });
+  // karpet Ruang Maestro
+  el(g,'a-box',{position:'0 0.045 -19.4',width:3.6,height:0.02,depth:12.4,color:'#7a2f2a'}); el(g,'a-box',{position:'0 0.055 -19.4',width:3.1,height:0.02,depth:11.9,color:'#9a4a38'});
+  [[-8.7,-1.4,1,1],[8.7,-1.4,1,1],[-8.7,-10.6,1.1,2],[8.7,-10.6,1.1,2],[-7.2,-13,1,2],[7.2,-13,1,2],[-7.2,-25,1.1,1],[7.2,-25,1.1,1]].forEach(([x,z,s,j])=>tanaman(g,x,z,s,j));
+  bangku(g,6.5,-10,0); bangku(g,7.9,-19.3,90); bangku(g,-7.9,-19.3,90);
+  g.querySelectorAll('.dekor *').forEach(e=>{ if(e.tagName!=='A-TEXT') e.setAttribute('shadow','cast:true;receive:true'); });
+  g.querySelectorAll('.lantai').forEach(e=>e.setAttribute('shadow','cast:false;receive:true'));
+  aturBayangan(bayangan);
+  pesan(sentuh?'Joystick di kiri bawah untuk berjalan, geser layar untuk menoleh.':'Panah atas/bawah atau W/S: maju/mundur. Panah kiri/kanan atau Q/E: putar. Klik lantai: berjalan ke titik itu.',9000);
+}
+
+/* Laptop: putar dengan panah kiri/kanan atau Q/E (panah kiri/kanan tidak lagi menggeser ke samping) */
+const tombolPutar={}; let tPutar=performance.now();
+addEventListener('keydown',e=>{ if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  const k=e.key.toLowerCase();
+  if(['arrowleft','arrowright','q','e'].includes(k)){ tombolPutar[k]=true; batalJalan(); if(k.startsWith('arrow')){ e.preventDefault(); e.stopImmediatePropagation(); } }
+  else if(['w','a','s','d','arrowup','arrowdown'].includes(k)) batalJalan(); },true);
+addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); delete tombolPutar[k]; if(k==='arrowleft'||k==='arrowright') e.stopImmediatePropagation(); },true);
+function putarKunci(){
+  const n=performance.now(), dt=Math.min(0.05,(n-tPutar)/1000); tPutar=n;
+  const arah=(tombolPutar.arrowleft||tombolPutar.q?1:0)-(tombolPutar.arrowright||tombolPutar.e?1:0);
+  if(!arah||bingkaiAktif>=0) return;
+  const lc=$('cam').components['look-controls']; if(lc) lc.yawObject.rotation.y+=arah*1.5*dt;
+}
+
+/* VR: kontroler (laser) dan kursor tatap (HP/Cardboard) agar bisa berpindah dengan mengarah ke lantai */
+['left','right'].forEach(t=>{ const c=document.createElement('a-entity'); c.setAttribute('laser-controls','hand:'+t); c.setAttribute('raycaster','objects:.klik;far:40'); $('rig').append(c); });
+$('scene').addEventListener('enter-vr',()=>{
+  batalJalan(); tutup(); const p=$('rig').object3D.position; if(p.y>5) p.set(0,0,16);
+  if(AFRAME.utils.device.isMobile()&&!$('gaze')){ const c=document.createElement('a-entity'); c.id='gaze';
+    c.setAttribute('cursor','fuse:true;fuseTimeout:1200'); c.setAttribute('raycaster','objects:.klik;far:40'); c.setAttribute('position','0 0 -1');
+    c.setAttribute('geometry','primitive:ring;radiusInner:0.012;radiusOuter:0.022'); c.setAttribute('material','color:#ffffff;shader:flat;opacity:0.85'); $('cam').append(c); } });
+$('scene').addEventListener('exit-vr',()=>{ const c=$('gaze'); if(c) c.remove(); const k=$('kartuvr'); if(k) k.remove(); });
+function kartuVR(k){
+  const lama=$('kartuvr'); if(lama) lama.remove();
+  const c=document.createElement('a-entity'); c.id='kartuvr'; c.setAttribute('position','0 -0.1 -1.6');
+  el(c,'a-plane',{width:1.8,height:1.1,color:'#fbf8f1',opacity:0.95});
+  el(c,'a-text',{value:k.judul+'\n'+[k.pelukis,k.tahun].filter(Boolean).join(', ')+'\n\n'+(k.penjelasan||''),width:1.6,wrapCount:38,anchor:'left',baseline:'top',align:'left',position:'-0.8 0.48 0.01',color:'#222'});
+  $('cam').append(c); setTimeout(()=>c.remove(),15000);
+}
