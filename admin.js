@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.05 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Pengguna, Log. Dimuat setelah museum.js.
+/* Ruang Rupa v2.07 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Pengguna, Log. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
