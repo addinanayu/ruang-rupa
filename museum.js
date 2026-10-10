@@ -1,4 +1,4 @@
-/* Museum Ruang Rupa - Tahap 1 (v1.02). Dimuat SETELAH skrip utama di index.html.
+/* Museum Ruang Rupa - Tahap 1 (v1.03). Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -143,7 +143,7 @@ function spanduk(g){
   [-7.5,0,7.5].forEach((x,i)=>{ const k=ada[i], f=el(g,'a-entity',{position:`${x} 5.2 0.5`});
     if(x===0) f.setAttribute('position','0 6 0.45');  // tengah: di atas pintu, di dalam area lintel
     el(f,'a-plane',{width:2.2,height:2.8,color:k&&WARNA[k.aliran]||'#9a9082'});
-    el(f,'a-text',{value:k?k.judul:'Segera hadir',align:'center',width:2,wrapCount:14,position:'0 0 0.02',color:'#fff'}); });
+    el(f,'a-text',{value:k?k.judul:'Segera hadir',align:'center',width:3.6,wrapCount:16,position:'0 0 0.02',color:'#fff'}); });
 }
 
 /* ---------- Titik masuk dari index.html ---------- */
