@@ -80,7 +80,7 @@
 <script>
 /* ===== KONFIGURASI (isi sebelum dipakai) ===== */
 // URL web app Apps Script (berakhiran /exec)
-const API_URL = 'https://script.google.com/macros/s/AKfycbxqRNXm_MW0zoQc8X5g0GSLXtbcsW_HaCuY2d8wZIEuKc9u-fPuusTEku-G70KUvWEDuA/exec';
+const API_URL = 'ISI_URL_EXEC_APPS_SCRIPT';
 // OAuth Client ID (tipe Web application) dari Google Cloud Console
 const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.googleusercontent.com';
 // Firebase (kosongkan databaseURL untuk mematikan multiplayer)
@@ -154,7 +154,7 @@ $('masuk').onclick = async () => {
   try{
     await gs('saveAvatar', saya.nama, saya.avatar);
     $('lobi').style.display='none'; $('hud').style.display='flex';
-    await muatGaleri(); bangunLorong(); bangunGaleri(); mulaiMultiplayer(); pindah('A');
+    await muatGaleri(); await bangunMuseum(); bangunGaleri(); mulaiMultiplayer(); pindah('A');
   }catch(e){ $('masuk').disabled=false; pesan(e.message,8000); }
 };
 
@@ -170,9 +170,6 @@ function bingkai(parent, x, y, z, rotY, url, judul, onClick){
   if(url){ const im=buat('a-image',{class:'klik',position:'0 0 0.02',width:2,height:2,src:url}); if(onClick) im.addEventListener('click',onClick); }
   buat('a-text',{value:judul||'Bingkai kosong',align:'center',width:3,position:'0 -1.4 0.02',color:'#222'});
   parent.append(g); return g;
-}
-function bangunLorong(){ /* Zona A: ganti URL dengan karya maestro dari sheet/folder Anda */
-  const d=$('dunia'); for(let i=0;i<4;i++) bingkai(d, -4, 1.7, i*-5+2, 90, '', 'Karya maestro '+(i+1));
 }
 function bangunGaleri(){ /* Zona D: 12 bingkai per halaman, 2 baris x 6 */
   const d=$('dunia'); d.querySelectorAll('.zd').forEach(e=>e.remove());
@@ -215,7 +212,7 @@ $('buat').onclick = async () => {
 };
 
 /* Multiplayer (Firebase) - hemat bandwidth:
-   - kirim posisi maksimal 1x/detik, dan hanya jika benar-benar bergerak/menoleh
+   - kirim posisi maksimal 1x/2 detik, dan hanya jika benar-benar bergerak/menoleh
    - dengarkan perubahan per-pemain (child_*), bukan seluruh node 'posisi' */
 function mulaiMultiplayer(){
   if(!FB.databaseURL) return pesan('Firebase belum dikonfigurasi: multiplayer nonaktif.',6000);
@@ -229,7 +226,7 @@ function mulaiMultiplayer(){
     const cur={x:r2(p.x),y:r2(p.y),z:r2(p.z),ry:r2(ry)};
     if(last && Math.abs(cur.x-last.x)<0.1 && Math.abs(cur.z-last.z)<0.1 && Math.abs(cur.ry-last.ry)<0.1) return;
     last=cur; ref.set(Object.assign({n:saya.nama,c:saya.avatar,t:Date.now()},cur)); };
-  kirim(); setInterval(kirim,1000);
+  kirim(); setInterval(kirim,2000);
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) ref.remove(); else { last=null; kirim(); } });
 
   const lain={};
@@ -246,5 +243,7 @@ function mulaiMultiplayer(){
   db.ref('posisi').on('child_removed',s=>{ const e=lain[s.key]; if(e){ e.remove(); delete lain[s.key]; } });
 }
 </script>
+<!-- Tahap 1: modul museum, harus setelah skrip utama -->
+<script src="museum.js"></script>
 </body>
 </html>
