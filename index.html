@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+<!-- Ruang Rupa v2.04 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -67,6 +68,7 @@
   <div id="hasil"></div>
 </div>
 <div id="pesan" class="ui" role="status"></div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.04</div>
 
 <a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:true" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
@@ -252,8 +254,8 @@ function mulaiMultiplayer(){
 }
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=1.07"></script>
-<script src="admin.js?v=2.02"></script>
-<script src="akun.js?v=2.02"></script>
+<script src="museum.js?v=2.04"></script>
+<script src="admin.js?v=2.04"></script>
+<script src="akun.js?v=2.04"></script>
 </body>
 </html>
