@@ -1,4 +1,4 @@
-/* Museum Ruang Rupa - Tahap 1 (v1.06). Dimuat SETELAH skrip utama di index.html.
+/* Museum Ruang Rupa - Tahap 1 (v1.07). Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -252,3 +252,11 @@ function bangunPatung(g){
     daftarBingkai[i]={x:0,z,ry:90,yaw:Math.PI/2,k:s.k};
   });
 }
+
+/* v1.07: panel Studio AI hanya muncul saat berdiri di karpet Studio (sudut barat aula) */
+setInterval(()=>{
+  if(!token||dariAtas||bingkaiAktif>=0||zonaAktif==='D') return;
+  const p=$('rig').object3D.position, di=p.x>-9.2&&p.x<-3.8&&p.z>-9.2&&p.z<-2.8;
+  if(di&&zonaAktif!=='C'){ zonaAktif='C'; $('studio').style.display='block'; }
+  else if(!di&&zonaAktif==='C'){ zonaAktif='A'; $('studio').style.display='none'; }
+},300);
