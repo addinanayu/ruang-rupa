@@ -1,4 +1,4 @@
-/* Panel Admin - Tahap 2A (v2.01): tab Langkah awal, Kelas, Pengguna. Dimuat setelah museum.js.
+/* Panel Admin - Tahap 2A (v2.02): tab Langkah awal, Kelas, Pengguna. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
@@ -67,6 +67,9 @@ async function renderPengguna(){
         if(!confirm('Turunkan '+x.email+' menjadi siswa?')) return;
         try{ await gs('adminHapusPeran',x.email); renderPengguna(); }catch(e){ pesan(e.message); } }}));
     }
-    return h('tr',{},h('td',{textContent:x.email}),h('td',{textContent:x.peran}),h('td',{},...aksi)); });
+    if(x.email.endsWith('#pw')) aksi.push(h('button',{className:'alt',textContent:'Reset sandi',onclick:async()=>{
+      const b=prompt('Sandi baru untuk '+x.email.replace('#pw','')+' (minimal 8 karakter):'); if(!b) return;
+      try{ await gs('adminResetSandi',x.email,b); pesan('Sandi direset. Sampaikan ke yang bersangkutan.'); }catch(e){ pesan(e.message); } }}));
+    return h('tr',{},h('td',{textContent:x.email.replace('#pw',' (sandi)')}),h('td',{textContent:x.peran}),h('td',{},...aksi)); });
   isi.replaceChildren(...kepala,h('div',{className:'tbl'},h('table',{},h('tr',{},...['Email','Peran','Kelas / aksi'].map(t=>h('th',{textContent:t}))),...baris)));
 }
