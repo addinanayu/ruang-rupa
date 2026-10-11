@@ -638,7 +638,7 @@ try{ $('ver').textContent+=' \u00b7 museum 2.09c'; }catch(e){}   // penanda: mus
 
 /* ================= v2.12: menu ringkas gaya tombol 3D. Deretan tombol grup ke samping, sub menu turun ke bawah (tampilan saja; isi menu tidak diubah) ================= */
 document.head.insertAdjacentHTML('beforeend',`<style>
-#hud.ui{background:transparent;box-shadow:none;padding:0;border-radius:0;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px;max-width:calc(100vw - 20px);pointer-events:none;
+#hud.ui{--tt:36px;background:transparent;box-shadow:none;padding:0;border-radius:0;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px;max-width:calc(100vw - 20px);pointer-events:none;
   top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px))}
 #hud.ui button,#pager,.grupMenu .gHead,.grupMenu .baris{pointer-events:auto}
 #hud.ui button{--a:#3f7fa0;--b:#2f6f8f;--s:#1b4760;color:#fff;font-weight:600;font-size:14px;min-height:34px;padding:6px 14px;border:0;border-radius:10px;
@@ -646,15 +646,17 @@ document.head.insertAdjacentHTML('beforeend',`<style>
   box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 var(--s),0 5px 8px rgba(0,0,0,.28);transition:transform .08s,box-shadow .08s,filter .12s}
 #hud.ui button.alt{--a:#6f7e84;--b:#586870;--s:#3a464b}
 #hud.ui button:hover{filter:brightness(1.08)}
-#hud.ui button:active,#hud.ui #bMenu[aria-expanded="true"]{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 var(--s),0 2px 4px rgba(0,0,0,.25)}
+#hud.ui button:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 var(--s),0 2px 4px rgba(0,0,0,.25)}
+#hud.ui #bMenu{box-sizing:border-box;height:var(--tt);min-height:var(--tt);padding:0 14px;line-height:1;font-size:14px}
+#hud.ui #bMenu[aria-expanded="true"]{filter:brightness(.93);box-shadow:inset 0 3px 6px rgba(0,0,0,.35),0 3px 0 var(--s),0 5px 8px rgba(0,0,0,.28)}
 #hud.ui #hudIsi{flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px;width:auto;max-width:none;max-height:none;overflow:visible;padding:0;margin:0;background:none;border:0;box-shadow:none;border-radius:0;pointer-events:none}
-.grupMenu .gHead{--a:#3f7fa0;--b:#2f6f8f;--s:#1b4760;display:inline-flex;align-items:center;gap:6px;margin:0;min-height:34px;padding:6px 12px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;
+.grupMenu .gHead{--a:#3f7fa0;--b:#2f6f8f;--s:#1b4760;display:flex;align-items:center;gap:6px;margin:0;box-sizing:border-box;height:var(--tt);min-height:var(--tt);padding:0 14px;line-height:1;border-radius:10px;color:#fff;font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;
   background:linear-gradient(180deg,var(--a) 0%,var(--b) 100%);text-shadow:0 1px 1px rgba(0,0,0,.45);cursor:pointer;user-select:none;-webkit-user-select:none;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 var(--s),0 5px 8px rgba(0,0,0,.28);transition:transform .08s,box-shadow .08s,filter .12s}
 .grupMenu .gHead:hover{filter:brightness(1.08)}
 .grupMenu .gHead:focus-visible{outline:3px solid #f2b705}
 .grupMenu .gHead::after{content:"\\25BE";font-size:12px;transition:transform .15s}
-.grupMenu.buka .gHead{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 var(--s),0 2px 4px rgba(0,0,0,.25);filter:brightness(.93)}
+.grupMenu.buka .gHead{filter:brightness(.93);box-shadow:inset 0 3px 6px rgba(0,0,0,.35),0 3px 0 var(--s),0 5px 8px rgba(0,0,0,.28)}
 .grupMenu.buka .gHead::after{transform:rotate(180deg)}
 .grupMenu:not(.buka) .baris{display:none}
 .grupMenu.buka .baris{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;position:absolute;left:0;top:100%;margin-top:8px;width:max-content;min-width:170px;max-width:calc(100vw - 20px);
@@ -665,7 +667,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 @keyframes hudMuncul{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 @media (max-width:640px){#hud.ui #hudIsi{flex-basis:100%}}
 @media (max-height:480px){.grupMenu.buka .baris{max-height:calc(100vh - 92px)}.grupMenu.buka .baris.dua{width:min(440px,calc(100vw - 20px));grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (pointer:coarse){#hud.ui button,.grupMenu .gHead{min-height:40px}#hud.ui .grupMenu .baris button{min-height:44px}.grupMenu.buka .baris{gap:8px}}
+@media (pointer:coarse){#hud.ui{--tt:42px}#hud.ui .grupMenu .baris button{min-height:44px}.grupMenu.buka .baris{gap:8px}}
 @media (prefers-reduced-motion:reduce){.grupMenu.buka .baris{animation:none}#hud.ui button,.grupMenu .gHead,.grupMenu .gHead::after{transition:none}}
 </style>`);
 /* Dropdown: judul grup menjadi tombol. Satu grup terbuka sekaligus; semua tertutup di awal. Lebih dari 5 item memakai 2 kolom. */
