@@ -636,45 +636,51 @@ addEventListener('keydown',e=>{ if(e.key==='Escape') $('denahBox').style.display
 
 try{ $('ver').textContent+=' \u00b7 museum 2.09c'; }catch(e){}   // penanda: museum.js termuat sampai akhir
 
-/* ================= v2.12: menu tombol 3D, grup menu berbentuk dropdown (tampilan + buka-tutup grup; isi menu tidak diubah) ================= */
-/* Kartu putih dipindah dari wadah #hud ke isi menu #hudIsi: saat tertutup hanya tombol Menu (biru asli) yang terlihat. */
+/* ================= v2.12: menu ringkas gaya tombol 3D. Deretan tombol grup ke samping, sub menu turun ke bawah (tampilan saja; isi menu tidak diubah) ================= */
 document.head.insertAdjacentHTML('beforeend',`<style>
-#hud.ui{background:transparent;box-shadow:none;padding:0;border-radius:0;gap:8px;top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px))}
-#hud.ui button{--a:#4f8fb0;--b:#2f6f8f;--s:#1b4760;color:#fff;font-weight:600;font-size:14px;min-height:36px;padding:7px 14px;border:0;border-radius:10px;
-  background:linear-gradient(180deg,var(--a) 0%,var(--b) 100%);text-shadow:0 1px 1px rgba(0,0,0,.35);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 3px 0 var(--s),0 6px 10px rgba(0,0,0,.28);transition:transform .08s,box-shadow .08s,filter .12s}
-#hud.ui button.alt{--a:#8e9ea4;--b:#6b7a80;--s:#46555a}
-#hud.ui #bMenu{font-size:15px;min-height:40px;padding:8px 18px}
+#hud.ui{background:transparent;box-shadow:none;padding:0;border-radius:0;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px;max-width:calc(100vw - 20px);pointer-events:none;
+  top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px))}
+#hud.ui button,#pager,.grupMenu .gHead,.grupMenu .baris{pointer-events:auto}
+#hud.ui button{--a:#3f7fa0;--b:#2f6f8f;--s:#1b4760;color:#fff;font-weight:600;font-size:14px;min-height:34px;padding:6px 14px;border:0;border-radius:10px;
+  background:linear-gradient(180deg,var(--a) 0%,var(--b) 100%);text-shadow:0 1px 1px rgba(0,0,0,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 var(--s),0 5px 8px rgba(0,0,0,.28);transition:transform .08s,box-shadow .08s,filter .12s}
+#hud.ui button.alt{--a:#6f7e84;--b:#586870;--s:#3a464b}
 #hud.ui button:hover{filter:brightness(1.08)}
-#hud.ui button:active,#hud.ui #bMenu[aria-expanded="true"]{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 var(--s),0 2px 5px rgba(0,0,0,.25)}
-#hudIsi{width:min(400px,calc(100vw - 28px));max-width:none;max-height:min(70vh,calc(100vh - 84px));overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;
-  background:rgba(247,245,240,.94);border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:10px;gap:6px;box-shadow:0 10px 28px rgba(0,0,0,.28);animation:hudMuncul .16s ease-out}
-.grupMenu .gHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;min-height:40px;padding:8px 12px;border-radius:10px;background:rgba(0,0,0,.06);
-  color:#2b2118;font-size:14px;font-weight:700;letter-spacing:0;text-transform:none;cursor:pointer;user-select:none;-webkit-user-select:none}
-.grupMenu .gHead:hover{background:rgba(0,0,0,.1)}
+#hud.ui button:active,#hud.ui #bMenu[aria-expanded="true"]{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 var(--s),0 2px 4px rgba(0,0,0,.25)}
+#hud.ui #hudIsi{flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px;width:auto;max-width:none;max-height:none;overflow:visible;padding:0;margin:0;background:none;border:0;box-shadow:none;border-radius:0;pointer-events:none}
+.grupMenu .gHead{--a:#3f7fa0;--b:#2f6f8f;--s:#1b4760;display:inline-flex;align-items:center;gap:6px;margin:0;min-height:34px;padding:6px 12px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;
+  background:linear-gradient(180deg,var(--a) 0%,var(--b) 100%);text-shadow:0 1px 1px rgba(0,0,0,.45);cursor:pointer;user-select:none;-webkit-user-select:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 0 var(--s),0 5px 8px rgba(0,0,0,.28);transition:transform .08s,box-shadow .08s,filter .12s}
+.grupMenu .gHead:hover{filter:brightness(1.08)}
 .grupMenu .gHead:focus-visible{outline:3px solid #f2b705}
-.grupMenu .gHead::after{content:"\\25BE";font-size:15px;transition:transform .15s}
-.grupMenu.buka .gHead{background:rgba(47,111,143,.16);color:#1b4760}
+.grupMenu .gHead::after{content:"\\25BE";font-size:12px;transition:transform .15s}
+.grupMenu.buka .gHead{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 var(--s),0 2px 4px rgba(0,0,0,.25);filter:brightness(.93)}
 .grupMenu.buka .gHead::after{transform:rotate(180deg)}
 .grupMenu:not(.buka) .baris{display:none}
-.grupMenu.buka .baris{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 2px 6px;animation:hudMuncul .14s ease-out}
-#hud.ui .grupMenu .baris button{width:100%;padding:7px 8px;font-size:13px;line-height:1.2}
+.grupMenu.buka .baris{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;position:absolute;left:0;top:100%;margin-top:8px;width:max-content;min-width:170px;max-width:calc(100vw - 20px);
+  max-height:min(62vh,calc(100vh - 170px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:0 2px 8px;animation:hudMuncul .14s ease-out}
+.grupMenu.buka .baris.dua{grid-template-columns:repeat(2,minmax(0,1fr));width:min(300px,calc(100vw - 20px))}
+#hud.ui .grupMenu .baris button{width:100%;min-height:34px;padding:6px 12px;font-size:13px;line-height:1.2;white-space:normal}
 #pager{background:var(--paper);padding:3px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 @keyframes hudMuncul{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-@media (max-width:640px){#hudIsi{width:min(290px,calc(100vw - 28px));max-height:min(62vh,calc(100vh - 150px))}}
-@media (max-height:480px) and (pointer:coarse){#hudIsi{width:min(400px,66vw);max-height:calc(100vh - 66px)}.grupMenu.buka .baris{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (pointer:coarse){#hud.ui button{min-height:40px}}
-@media (prefers-reduced-motion:reduce){#hudIsi,.grupMenu.buka .baris{animation:none}#hud.ui button,.grupMenu .gHead::after{transition:none}}
+@media (max-width:640px){#hud.ui #hudIsi{flex-basis:100%}}
+@media (max-height:480px){.grupMenu.buka .baris{max-height:calc(100vh - 92px)}.grupMenu.buka .baris.dua{width:min(440px,calc(100vw - 20px));grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (pointer:coarse){#hud.ui button,.grupMenu .gHead{min-height:40px}#hud.ui .grupMenu .baris button{min-height:44px}.grupMenu.buka .baris{gap:8px}}
+@media (prefers-reduced-motion:reduce){.grupMenu.buka .baris{animation:none}#hud.ui button,.grupMenu .gHead,.grupMenu .gHead::after{transition:none}}
 </style>`);
-/* Dropdown: judul grup menjadi pembuka-penutup. Hanya satu grup terbuka sekaligus. Layar sentuh: semua tertutup; laptop: grup Tempat terbuka. */
+/* Dropdown: judul grup menjadi tombol. Satu grup terbuka sekaligus; semua tertutup di awal. Lebih dari 5 item memakai 2 kolom. */
 try{ const isiM=$('hudIsi'); if(isiM){
   const grups=[...isiM.querySelectorAll('.grupMenu')];
-  const set=(g,b)=>{ g.classList.toggle('buka',b); const h=g.querySelector('.gHead'); if(h) h.setAttribute('aria-expanded',String(b)); };
-  const ganti=g=>{ const b=!g.classList.contains('buka'); grups.forEach(x=>set(x,false)); if(b) set(g,true); };
+  const set=(g,b)=>{ g.classList.toggle('buka',b); const h=g.querySelector('.gHead'); if(h) h.setAttribute('aria-expanded',String(b));
+    if(b){ const br=g.querySelector('.baris'); if(br) br.classList.toggle('dua',br.children.length>5); } };
+  const tutupSemua=()=>grups.forEach(g=>set(g,false));
+  const ganti=g=>{ const b=!g.classList.contains('buka'); tutupSemua(); if(b) set(g,true); };
   grups.forEach(g=>{ const h=g.querySelector('b'); if(!h) return; h.classList.add('gHead'); h.setAttribute('role','button'); h.tabIndex=0; h.setAttribute('aria-expanded','false');
     h.addEventListener('click',()=>ganti(g)); h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); ganti(g); } }); });
-  if(!sentuh&&grups[0]) set(grups[0],true);
-  /* Layar sentuh: setelah memilih tempat (grup pertama), menu menutup sendiri supaya layar tidak tertutup. Pengaturan tetap terbuka. */
+  document.addEventListener('pointerdown',e=>{ if(!(e.target.closest&&e.target.closest('#hud'))) tutupSemua(); },true);   /* ketuk di luar menu: sub menu menutup */
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') tutupSemua(); });
+  const bm=$('bMenu'); if(bm) bm.addEventListener('click',tutupSemua);
+  /* Layar sentuh: setelah memilih tempat (grup pertama), seluruh menu menutup sendiri supaya layar tidak tertutup. Pengaturan tetap terbuka. */
   if(sentuh) isiM.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button'); if(!b) return;
-    if(b.closest('.grupMenu')===grups[0]) setTimeout(()=>{ if(bukaMenu) bukaMenu(false); },150); });
+    if(b.closest('.grupMenu')===grups[0]){ tutupSemua(); setTimeout(()=>{ if(bukaMenu) bukaMenu(false); },150); } });
 } }catch(e){}
