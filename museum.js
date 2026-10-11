@@ -265,21 +265,116 @@ function gerakJoy(){   // joystick: kecepatan tetap 1,6 m/s, searah pandangan; b
   p.x+=(-Math.sin(yaw)*joy.y+Math.cos(yaw)*joy.x)*v; p.z+=(-Math.cos(yaw)*joy.y-Math.sin(yaw)*joy.x)*v;
 }
 
-/* Patung & pahatan di tengah Ruang Maestro (model sederhana dari bentuk dasar; teks WAJIB diverifikasi guru) */
+/* Patung & pahatan di tengah Ruang Maestro (model 3D sederhana dari bentuk dasar; teks WAJIB diverifikasi guru) */
 const CAT='Model sederhana buatan, bukan tiruan karya asli. [verifikasi guru]';
+const CAT_FOTO='Model 3D hasil konversi foto, bukan tiruan persis karya asli. [verifikasi guru]';
 const PATUNG=[
- {z:-15,tipe:'figur',k:{judul:'Patung Figur Manusia',pelukis:'Patung (model sederhana)',aliran:'Seni patung',
-  penjelasan:'Patung adalah karya seni tiga dimensi. Patung bisa dibuat dengan memahat (mengurangi bahan seperti batu atau kayu), memodel (menambah bahan seperti tanah liat), atau mengecor (menuang logam cair ke cetakan). '+CAT,
-  fakta:'Karena tiga dimensi, patung bisa dilihat dari semua sisi. Coba berjalan mengelilinginya.',motivasi:'Dari satu bongkah batu, kesabaran bisa membentuk sebuah karya.',contoh:true}},
- {z:-18.2,tipe:'arca',k:{judul:'Arca Candi (stilisasi)',pelukis:'Seni patung Nusantara',aliran:'Patung Nusantara',
-  penjelasan:'Arca adalah patung dari masa Hindu-Buddha di Nusantara, banyak ditemukan di candi dan dipahat dari batu. '+CAT,
-  fakta:'Banyak arca di Jawa dipahat dari batu andesit. Perhatikan sikap duduk, mahkota, dan hiasannya.',motivasi:'Karya yang dibuat dengan teliti bisa bertahan ratusan tahun.',contoh:true}},
+ {z:-15,tipe:'figur',k:{judul:'Patung Figur Manusia',pelukis:'Patung dada marmer (model 3D dari foto)',aliran:'Seni patung Romawi',
+  penjelasan:'Ini patung dada (bust), yaitu patung yang hanya menampilkan kepala, leher, bahu, dan dada. Tokohnya digambarkan dengan karangan daun di kepala, rambut berponi pendek, dan jubah yang jatuh berlipat-lipat dari bahu. Bahannya marmer putih yang dipahat halus, lalu diletakkan di atas alas bulat. '+CAT_FOTO,
+  fakta:'Orang Romawi kuno memakai karangan daun sebagai tanda kemenangan dan kehormatan. Perhatikan lipatan jubahnya: batu keras bisa terlihat seperti kain yang lembut.',motivasi:'Dari satu bongkah batu, kesabaran bisa membentuk sebuah karya.',contoh:true}},
+ {z:-18.2,tipe:'arca',k:{judul:'Arca Candi (Ukiran Bali)',pelukis:'Seni ukir kayu Bali (model 3D dari foto)',aliran:'Patung Nusantara',
+  penjelasan:'Ini patung dada ukiran kayu bergaya Bali. Wajahnya tenang dengan mata terpejam, memakai mahkota berhias dan hiasan telinga, dengan kalung berukir di dada. Di belakang kepala ada lingkaran sinar berlubang-lubang yang dipahat satu per satu. Kayunya dibiarkan berwarna cokelat alami, sehingga serat dan hasil pahatannya terlihat. '+CAT_FOTO,
+  fakta:'Ukiran Bali terkenal dengan hiasan yang rumit dan rapi. Coba hitung berapa sinar yang mengelilingi kepalanya.',motivasi:'Karya yang dibuat dengan teliti bisa bertahan ratusan tahun.',contoh:true}},
  {z:-21.4,tipe:'abstrak',k:{judul:'Patung Abstrak',pelukis:'Patung (model sederhana)',aliran:'Seni patung modern',
-  penjelasan:'Patung abstrak tidak meniru benda nyata. Seniman bermain dengan bentuk, garis, dan ruang. '+CAT,
-  fakta:'Lihat dari beberapa sisi: bentuknya terasa berubah-ubah.',motivasi:'Tidak semua karya harus mirip benda nyata. Imajinasimu juga karya.',contoh:true}},
- {z:-24.2,tipe:'relief',k:{judul:'Relief (Pahatan Timbul)',pelukis:'Seni pahat Nusantara',aliran:'Relief',
-  penjelasan:'Relief adalah pahatan yang menonjol dari bidang datar seperti dinding atau lempeng batu. Relief candi sering menceritakan sebuah kisah. '+CAT,
-  fakta:'Candi Borobudur dikenal memiliki ribuan panel relief.',motivasi:'Cerita bisa ditulis di buku, tetapi juga bisa dipahat di batu.',contoh:true}}];
+  penjelasan:'Patung abstrak tidak meniru benda nyata. Seniman bermain dengan bentuk, garis, warna, dan ruang. Patung ini berbentuk simpul yang melilit dan berwarna-warni seperti pelangi: merah, jingga, kuning, hijau, biru, nila, dan ungu. '+CAT,
+  fakta:'Lihat dari beberapa sisi: bentuknya terasa berubah-ubah. Ikuti satu warna dari ujung ke ujung, ke mana ia berakhir?',motivasi:'Tidak semua karya harus mirip benda nyata. Imajinasimu juga karya.',contoh:true}},
+ {z:-24.2,tipe:'relief',k:{judul:'Garuda Wisnu (Kayu)',pelukis:'Seni ukir kayu Bali (model 3D dari foto)',aliran:'Patung Nusantara',
+  penjelasan:'Patung ukiran kayu ini menggambarkan Dewa Wisnu yang duduk di atas Garuda, burung raksasa dalam cerita Hindu. Garuda berdiri dengan kaki ditekuk, kedua tangannya terentang, dan sayapnya mengembang lebar dengan celah-celah di antara bulunya. Wisnu memakai mahkota dan duduk di belakang kepala Garuda. Alasnya bulat dengan tepi bergerigi. '+CAT_FOTO,
+  fakta:'Garuda juga menjadi lambang negara Indonesia. Di Bali ada patung Garuda Wisnu Kencana yang termasuk salah satu patung terbesar di dunia.',motivasi:'Cerita bisa ditulis di buku, tetapi juga bisa dipahat di kayu dan batu.',contoh:true}}];
+
+/* Bahan 3D: geometri dasar dipakai bersama (hemat memori untuk HP) */
+const T3=AFRAME.THREE;
+const BHN=(c,r,x)=>new T3.MeshStandardMaterial(Object.assign({color:c,roughness:r==null?0.7:r,metalness:0},x||{}));
+const G3={sph:new T3.SphereGeometry(1,12,9),cyl:new T3.CylinderGeometry(1,1,1,12),con:new T3.ConeGeometry(1,1,10),box:new T3.BoxGeometry(1,1,1),
+  tap:new T3.CylinderGeometry(1.7,1,1,4),cap:new T3.SphereGeometry(1,12,6,0,Math.PI*2,0,Math.PI*0.55),
+  mangkok:new T3.CylinderGeometry(1,0.45,1,14,1,true,Math.PI/2,Math.PI)};
+function B3(g,geo,mat,p,s,r){ const m=new T3.Mesh(G3[geo]||geo,mat); if(p)m.position.set(p[0],p[1],p[2]);
+  if(s)m.scale.set(s[0],s[1],s[2]); if(r)m.rotation.set(r[0],r[1],r[2]); g.add(m); return m; }
+/* Putar bagian pada sumbu Z dari titik tumpu (dipakai untuk sinar dan bulu sayap) */
+function kipas(g,mat,px,py,pz,sudut,panjang,jari,tebal,rx){ const sg=new T3.Group(); sg.position.set(px,py,pz); sg.rotation.set(rx||0,0,sudut); g.add(sg);
+  B3(sg,'tap',mat,[0,jari+panjang/2,0],[tebal[0],panjang,tebal[1]]); }
+
+function patungFoto(w,tipe){
+  const g=new T3.Group(); g.position.y=1.05; g.rotation.y=Math.PI/2; w.object3D.add(g); /* depan patung menghadap papan nama (+x) */
+  if(tipe==='figur'){ /* patung dada marmer bermahkota daun */
+    const mr=BHN('#e9e4d4',0.5), lp=BHN('#d6cfba',0.6), gl=BHN('#bdb6a3',0.7);
+    const prof=[[0.001,0],[0.30,0],[0.30,0.05],[0.24,0.07],[0.24,0.11],[0.17,0.14],[0.17,0.20],[0.22,0.22],[0.22,0.25],[0.001,0.25]].map(a=>new T3.Vector2(a[0],a[1]));
+    B3(g,new T3.LatheGeometry(prof,18),mr);
+    B3(g,'sph',mr,[0,0.50,0],[0.42,0.26,0.20]);
+    B3(g,'sph',mr,[-0.30,0.52,0],[0.17,0.15,0.16]); B3(g,'sph',mr,[0.30,0.52,0],[0.17,0.15,0.16]);
+    B3(g,'sph',lp,[-0.26,0.50,0.12],[0.14,0.12,0.07],[0,0,0.5]);           /* gumpalan jubah di bahu */
+    B3(g,'sph',lp,[0.22,0.38,0.14],[0.20,0.17,0.08],[0,0,-0.3]);
+    [[0.03,0.47,-0.55,0.62],[0.00,0.40,-0.55,0.58],[-0.03,0.33,-0.55,0.50]].forEach(a=>B3(g,'box',lp,[a[0],a[1],0.19],[a[3],0.07,0.05],[0,0,a[2]])); /* lipatan diagonal */
+    B3(g,'sph',mr,[-0.27,0.56,0.20],[0.05,0.05,0.03]);                      /* bros bahu */
+    B3(g,'cyl',mr,[0,0.70,0],[0.075,0.12,0.075]);                           /* leher */
+    B3(g,'sph',mr,[0,0.86,0.01],[0.115,0.145,0.12]);                        /* kepala */
+    B3(g,'sph',mr,[0,0.77,0.07],[0.05,0.04,0.05]);                          /* dagu */
+    B3(g,'con',mr,[0,0.85,0.12],[0.025,0.07,0.025],[Math.PI/2,0,0]);        /* hidung */
+    [-1,1].forEach(s=>{ B3(g,'sph',gl,[s*0.045,0.89,0.108],[0.025,0.012,0.01]); B3(g,'sph',mr,[s*0.118,0.87,0],[0.02,0.035,0.02]); });
+    B3(g,'sph',gl,[0,0.80,0.115],[0.04,0.007,0.01]);
+    B3(g,'cap',lp,[0,0.89,-0.005],[0.125,0.13,0.13],[-0.15,0,0]);           /* rambut */
+    for(let i=-2;i<=2;i++) B3(g,'con',lp,[i*0.04,0.96,0.1],[0.02,0.07,0.02],[Math.PI*0.85,0,i*0.12]); /* poni */
+    for(let k=0;k<12;k++){ const a=k/12*Math.PI*2; B3(g,'sph',lp,[Math.sin(a)*0.13,0.975,Math.cos(a)*0.13],[0.04,0.016,0.055],[0,a,0.2]); } /* karangan daun */
+  }
+  if(tipe==='arca'){ /* patung dada kayu Bali, mahkota dan lingkar sinar */
+    const kw=BHN('#c98a3e',0.55), kg=BHN('#9c5f25',0.65), em=BHN('#d9a441',0.35), kt=BHN('#4a2a12',0.8);
+    B3(g,'cyl',kw,[0,0.10,0],[0.34,0.20,0.15]);
+    B3(g,'sph',kw,[0,0.30,0],[0.40,0.17,0.17]);
+    B3(g,'sph',kg,[0,0.30,0.12],[0.22,0.12,0.06]);                          /* kalung berukir */
+    B3(g,'box',kg,[-0.09,0.36,0.15],[0.24,0.05,0.03],[0,0,-0.55]); B3(g,'box',kg,[0.09,0.36,0.15],[0.24,0.05,0.03],[0,0,0.55]);
+    B3(g,'cyl',kw,[0,0.46,0],[0.08,0.14,0.08]);
+    B3(g,'sph',kw,[0,0.66,0.01],[0.14,0.17,0.13]);                          /* wajah */
+    B3(g,'con',kw,[0,0.64,0.13],[0.03,0.08,0.03],[Math.PI/2,0,0]);
+    [-1,1].forEach(s=>{ B3(g,'box',kt,[s*0.05,0.69,0.125],[0.06,0.012,0.01],[0,0,-s*0.12]); B3(g,'box',kg,[s*0.05,0.715,0.12],[0.07,0.01,0.01],[0,0,-s*0.12]);
+      B3(g,'sph',kg,[s*0.18,0.62,0],[0.04,0.10,0.05]); B3(g,'sph',kg,[s*0.19,0.55,0.02],[0.05,0.06,0.05]); });  /* hiasan telinga */
+    B3(g,'box',kt,[0,0.585,0.125],[0.05,0.012,0.012]);                      /* bibir */
+    B3(g,'sph',em,[0,0.745,0.13],[0.015,0.015,0.01]);                       /* urna di dahi */
+    B3(g,'cyl',kg,[0,0.84,-0.01],[0.17,0.09,0.15]);                         /* mahkota (gelungan) */
+    for(let i=-2;i<=2;i++) B3(g,'sph',em,[i*0.06,0.86,0.14-Math.abs(i)*0.012],[0.03,0.04,0.02]);
+    B3(g,'cyl',kw,[0,0.93,-0.02],[0.15,0.08,0.12]); B3(g,'con',em,[0,1.02,-0.02],[0.05,0.10,0.05]);
+    for(let i=0;i<17;i++){ const a=(-105+i*210/16)*Math.PI/180; kipas(g,i%2?kw:kg,0,0.82,-0.04,-a,0.30,0.17,[0.028,0.012]); } /* lingkar sinar berlubang */
+  }
+  if(tipe==='abstrak'){ /* simpul pelangi, putar pelan */
+    const gk=new T3.TorusKnotGeometry(0.35,0.09,120,10), pos=gk.attributes.position, col=new Float32Array(pos.count*3), c=new T3.Color(), R=11;
+    for(let v=0;v<pos.count;v++){ c.setHSL((Math.floor(v/R)%120)/120,0.9,0.55); col[v*3]=c.r; col[v*3+1]=c.g; col[v*3+2]=c.b; }
+    gk.setAttribute('color',new T3.BufferAttribute(col,3));
+    const t=el(w,'a-entity',{position:'0 1.9 0'}); t.object3D.add(new T3.Mesh(gk,BHN('#ffffff',0.35,{vertexColors:true})));
+    if(!kurangiGerak) t.setAttribute('animation','property:rotation;to:0 360 0;loop:true;dur:16000;easing:linear');
+    w.object3D.remove(g);
+  }
+  if(tipe==='relief'){ /* Garuda Wisnu, ukiran kayu */
+    const kw=BHN('#bf7a35',0.55), kg=BHN('#8e5322',0.65), kl=BHN('#d29a52',0.5), kt=BHN('#2a1608',0.8), md=BHN('#bf7a35',0.55,{side:T3.DoubleSide});
+    g.scale.set(0.88,0.88,0.88);
+    B3(g,'cyl',kg,[0,0.05,0],[0.50,0.10,0.34]); B3(g,'cyl',kw,[0,0.13,0],[0.42,0.07,0.28]);       /* alas oval */
+    [-1,1].forEach(s=>{
+      B3(g,'cyl',kw,[s*0.15,0.30,0.08],[0.045,0.28,0.045],[0,0,s*0.45]);                          /* kaki ditekuk */
+      B3(g,'box',kg,[s*0.22,0.17,0.10],[0.12,0.04,0.14]);
+      B3(g,'con',kg,[s*0.44,0.22,0],[0.08,0.20,0.04],[0,0,s*-1.2]);                                /* hiasan ujung */
+      B3(g,'cyl',kw,[s*0.26,0.55,0.02],[0.035,0.24,0.035],[0,0,s*-1.97]); B3(g,'sph',kw,[s*0.40,0.50,0.02],[0.05,0.05,0.05]); /* tangan terentang */
+      B3(g,'sph',kg,[s*0.24,0.62,-0.04],[0.17,0.12,0.04],[0,0,s*-0.4]);                           /* pangkal sayap */
+      B3(g,'sph',kl,[s*0.05,0.77,0.14],[0.04,0.04,0.04]); B3(g,'sph',kt,[s*0.05,0.77,0.178],[0.016,0.016,0.016]); /* mata Garuda */
+      for(let i=0;i<8;i++) kipas(g,i%2?kw:kg,s*0.14,0.62,-0.06,s*-(0.1+i*0.1643),0.42-i*0.02,0.10,[0.05,0.016],-0.15); /* bulu sayap */
+    });
+    B3(g,'sph',kw,[0,0.55,0],[0.17,0.22,0.12]); B3(g,'con',kg,[0,0.34,0.10],[0.10,0.30,0.03],[Math.PI,0,0]); /* badan dan hiasan dada */
+    B3(g,'sph',kw,[0,0.74,0.06],[0.11,0.11,0.11]);
+    B3(g,'con',kw,[0,0.70,0.17],[0.05,0.13,0.04],[Math.PI/2+0.5,0,0]);                              /* paruh */
+    B3(g,'con',kg,[0,0.90,0.04],[0.07,0.14,0.07]);                                                    /* mahkota Garuda */
+    B3(g,'sph',kw,[0,1.00,-0.04],[0.09,0.12,0.07]); B3(g,'sph',kw,[0,1.17,-0.03],[0.065,0.075,0.06]);    /* Wisnu */
+    B3(g,'con',kg,[0,1.27,-0.03],[0.05,0.11,0.05]);
+    [-1,1].forEach(s=>{ B3(g,'cyl',kw,[s*0.10,1.00,0.0],[0.025,0.12,0.025],[0,0,s*-0.5]); B3(g,'sph',kw,[s*0.04,1.02,0.05],[0.025,0.025,0.025]); B3(g,'sph',kt,[s*0.025,1.18,0.03],[0.008,0.008,0.008]); });
+    B3(g,'mangkok',md,[0,1.12,-0.04],[0.50,0.26,0.30]);                                                /* kipas lengkung di belakang Wisnu */
+  }
+}
+/* Model GLB (hasil konversi foto). Taruh file di folder patung/ sejajar index.html. Kosongkan alamat untuk memakai model bentuk dasar. */
+const GLB_PATUNG={figur:'patung/patung_figur.glb',arca:'patung/patung_arca.glb',relief:'patung/patung_relief.glb'};
+const BAHAN_GLB={figur:'warna:#e9e4d4;kasar:0.55',arca:'warna:#c98a3e;kasar:0.6',relief:''};  /* relief memakai tekstur bawaan GLB */
+const SKALA_GLB=0.65;  /* tinggi model GLB 2 unit, jadi tinggi tampil 1,3 unit di atas podium */
+AFRAME.registerComponent('bahan-patung',{schema:{warna:{type:'color',default:''},kasar:{default:0.6}},
+  init(){ this.el.addEventListener('model-loaded',()=>{ const d=this.data, m3=this.el.getObject3D('mesh'); if(!m3) return;
+    m3.traverse(o=>{ if(!o.isMesh) return;
+      if(!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
+      if(d.warna) o.material=new AFRAME.THREE.MeshStandardMaterial({color:d.warna,roughness:d.kasar,metalness:0});
+      else { o.material.metalness=0; o.material.flatShading=false; o.material.needsUpdate=true; } }); }); }});
 function bangunPatung(g){
   SOLID.length=SOLID_DASAR;
   PATUNG.forEach((s,n)=>{
@@ -287,16 +382,10 @@ function bangunPatung(g){
     el(w,'a-box',{position:'0 0.5 0',width:1.2,height:1,depth:1.2,color:'#efe8d9'});
     el(w,'a-box',{position:'0 1.02 0',width:1.3,height:0.06,depth:1.3,color:'#d9a21b'});
     papanPatung(w,s.k.judul);
-    if(s.tipe==='figur'){ const c='#e8e2d4';
-      el(w,'a-cylinder',{position:'0 1.5 0',radius:0.2,height:0.9,color:c}); el(w,'a-sphere',{position:'0 2.12 0',radius:0.16,color:c});
-      el(w,'a-cylinder',{position:'0 1.55 0.27',radius:0.06,height:0.7,color:c}); el(w,'a-cylinder',{position:'0 1.55 -0.27',radius:0.06,height:0.7,color:c}); }
-    if(s.tipe==='arca'){ const c='#8b867c';
-      el(w,'a-cylinder',{position:'0 1.11 0',radius:0.45,height:0.18,color:c}); el(w,'a-cylinder',{position:'0 1.6 0',radius:0.2,height:0.75,color:c,'radius-bottom':0.3});
-      el(w,'a-sphere',{position:'0 2.15 0',radius:0.18,color:c}); el(w,'a-cone',{position:'0 2.44 0',radius:0.13,height:0.3,color:c}); }
-    if(s.tipe==='abstrak'){ const t=el(w,'a-torus-knot',{position:'0 1.9 0',radius:0.35,'radius-tubular':0.09,color:'#c9902f'});
-      if(!kurangiGerak) t.setAttribute('animation','property:rotation;to:0 360 0;loop:true;dur:16000;easing:linear'); }
-    if(s.tipe==='relief'){ el(w,'a-box',{position:'0 1.85 0',width:0.25,height:1.6,depth:1.1,color:'#8d877b'});
-      [-0.27,0.27].forEach(zz=>[1.4,1.85,2.3].forEach(yy=>el(w,'a-box',{position:`0.16 ${yy} ${zz}`,width:0.08,height:0.3,depth:0.3,color:'#a59f92'}))); }
+    const url=GLB_PATUNG[s.tipe];
+    if(url){ const m=el(w,'a-entity',Object.assign({'bahan-patung':BAHAN_GLB[s.tipe]||'',position:`0 ${1.05+SKALA_GLB} 0`,rotation:'0 90 0',scale:`${SKALA_GLB} ${SKALA_GLB} ${SKALA_GLB}`},{'gltf-model':`url(${url})`}));
+      m.addEventListener('model-error',()=>{ m.remove(); patungFoto(w,s.tipe); }); }   /* GLB gagal dimuat: pakai model bentuk dasar */
+    else patungFoto(w,s.tipe);
     const hit=el(w,'a-box',{position:'0 1.9 0',width:1.4,height:2,depth:1.4,material:'opacity:0;transparent:true',class:'klik',role:'img','aria-label':s.k.judul});
     hit.addEventListener('click',()=>{ if(klikSah()) buka(i); });
     daftarBingkai[i]={x:0,z,ry:90,yaw:Math.PI/2,k:s.k};
