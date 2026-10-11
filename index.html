@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- Ruang Rupa v2.08 -->
+<!-- Ruang Rupa v2.09 -->
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Ruang Rupa Interaktif</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -68,7 +68,7 @@
   <div id="hasil"></div>
 </div>
 <div id="pesan" class="ui" role="status"></div>
-<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.08</div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.09</div>
 
 <a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
@@ -125,7 +125,7 @@ async function setelahLogin(t){
   try{
     const r=await gs('getProfile');
     saya.email=r.email; saya.peran=r.peran; saya.kelas=r.kelas; $('akun').textContent='Masuk sebagai '+r.email.replace('#pw',' (akun sandi)');
-    if(r.perluKelas){ const ks=await gs('getKelasAktif'), sel=$('kelas'); sel.innerHTML=''; sel.add(new Option('Pilih kelas...',''));
+    if(false){   /* v2.09: siswa tidak memilih kelas di lobi; kelas diatur guru di Panel Admin */ const ks=await gs('getKelasAktif'), sel=$('kelas'); sel.innerHTML=''; sel.add(new Option('Pilih kelas...',''));
       ks.forEach(k=>sel.add(new Option(k.nama,k.id))); $('kelasBox').style.display='block'; } else $('kelasBox').style.display='none';
     if(r.profile){ $('nama').value=r.profile.nama; saya.avatar=r.profile.avatar; tandaiAvatar(); }
     if(sudahMasuk) return;
@@ -252,10 +252,11 @@ function mulaiMultiplayer(){
   db.ref('posisi').on('child_changed',taruh);
   db.ref('posisi').on('child_removed',s=>{ const e=lain[s.key]; if(e){ e.remove(); delete lain[s.key]; } });
 }
+window.addEventListener('error',e=>{ try{ pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); }catch(x){} });
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=2.08"></script>
-<script src="admin.js?v=2.08"></script>
-<script src="akun.js?v=2.08"></script>
+<script src="museum.js?v=2.09"></script>
+<script src="admin.js?v=2.09"></script>
+<script src="akun.js?v=2.09"></script>
 </body>
 </html>

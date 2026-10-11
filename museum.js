@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.08 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.09 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -56,8 +56,7 @@ function bangunGedung(g){
   kotak(g,-6.5,2.2,-2.5,4.4,2.8,0.2,gelap);
   kotak(g,-8.3,1.1,-2.5,0.16,2.2,0.16,gelap); kotak(g,-4.7,1.1,-2.5,0.16,2.2,0.16,gelap);
   kotak(g,-8.3,0.05,-2.5,0.8,0.1,0.8,gelap); kotak(g,-4.7,0.05,-2.5,0.8,0.1,0.8,gelap);
-  [[-2.38,0],[-2.62,180]].forEach(([zz,ry])=>{ teksTimbul(g,'DENAH',-6.5,3.3,zz,8,'#f3e6c8',ry);
-    teks(g,'Utara: Lukisan Era Modernisme\nBarat: Studio AI\nTimur: Galeri Bersama',-6.5,2.2,zz,5,'#f3e6c8',ry); });
+  [[-2.39,0],[-2.61,180]].forEach(([zz,ry])=>el(g,'a-plane',{position:`-6.5 2.2 ${zz}`,rotation:`0 ${ry} 0`,width:4.2,height:2.68,material:{src:denahTex(),shader:'flat'}}));   // denah gambar, kedua sisi
 
   [['Studio AI',-9.6,'C',90],['Galeri Bersama',9.6,'D',-90]].forEach(([n,x,z,ry])=>{
     const p = el(g,'a-box',{position:`${x} 2 -6`,width:0.3,height:2.4,depth:3,color:'#8a6a3c',class:'klik'});
@@ -143,7 +142,7 @@ function buka(i){
 }
 function tutup(){
   if(bingkaiAktif<0) return; bingkaiAktif=-1; $('info').style.display='none';
-  $('rig').setAttribute('wasd-controls','enabled',true); // kamera dilepas, siswa bebas berjalan lagi
+  /* gerak keyboard ditangani gerakKunci() */ 0; // kamera dilepas, siswa bebas berjalan lagi
 }
 $('bKembali').onclick = tutup;
 $('bKerjakan').onclick = ()=>pesan('Latihan soal hadir di Tahap 3.');
@@ -201,8 +200,8 @@ let prevPos = null;
 (function cekTabrak(){ requestAnimationFrame(cekTabrak);
   const yy=$('rig').object3D.position.y;   // status 'dari atas' dibaca dari tinggi kamera, jadi tabrakan tidak pernah tertinggal mati
   if((yy>5)!==dariAtas){ dariAtas=yy>5; $('bAtas').textContent=dariAtas?'Turun ke plaza':'Lihat dari atas'; }
+  gerakKunci();
   if(dariAtas||bingkaiAktif>=0||!token){ prevPos=null; return; }
-  putarKunci();
   gerakJoy();
   const p=$('rig').object3D.position;
   if(prevPos && dalamPadat(p.x,p.z)){            // geser menyusuri dinding, bukan menembusnya
@@ -354,21 +353,30 @@ function bangunDekor(g){
   g.querySelectorAll('.dekor *').forEach(e=>{ if(e.tagName!=='A-TEXT') e.setAttribute('shadow','cast:true;receive:true'); });
   g.querySelectorAll('.lantai').forEach(e=>e.setAttribute('shadow','cast:false;receive:true'));
   aturBayangan(bayangan);
-  pesan(sentuh?'Joystick di kiri bawah untuk berjalan, geser layar untuk menoleh.':'Panah atas/bawah atau W/S: maju/mundur. Panah kiri/kanan atau Q/E: putar. Klik lantai: berjalan ke titik itu.',9000);
+  pesan(sentuh?'Joystick di kanan bawah untuk berjalan, geser layar untuk menoleh, cubit dua jari untuk zoom.':'W/panah atas: maju. S/panah bawah: mundur. A/D: geser. Q/E atau panah kiri/kanan: putar. Z: balik badan. Shift: lari. Roda mouse atau +/-: zoom.',9000);
 }
 
 /* Laptop: putar dengan panah kiri/kanan atau Q/E (panah kiri/kanan tidak lagi menggeser ke samping) */
 const tombolPutar={}; let tPutar=performance.now();
-addEventListener('keydown',e=>{ if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+const KUNCI=['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright'];
+addEventListener('keydown',e=>{
+  tombolPutar.shift=e.shiftKey;
+  if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey) return;
   const k=e.key.toLowerCase();
-  if(['arrowleft','arrowright','q','e'].includes(k)){ tombolPutar[k]=true; batalJalan(); if(k.startsWith('arrow')){ e.preventDefault(); e.stopImmediatePropagation(); } }
-  else if(['w','a','s','d','arrowup','arrowdown'].includes(k)) batalJalan(); },true);
-addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); delete tombolPutar[k]; if(k==='arrowleft'||k==='arrowright') e.stopImmediatePropagation(); },true);
-function putarKunci(){
+  if(k==='z'&&token&&bingkaiAktif<0){ const lc=$('cam').components['look-controls']; if(lc) lc.yawObject.rotation.y+=Math.PI; return; }   // balik badan
+  if(k==='+'||k==='='){ aturFov(fov-5); return; } if(k==='-'){ aturFov(fov+5); return; } if(k==='0'){ aturFov(80); return; }
+  if(!KUNCI.includes(k)) return;
+  tombolPutar[k]=true; batalJalan(); if(k.startsWith('arrow')){ e.preventDefault(); e.stopImmediatePropagation(); } },true);
+addEventListener('keyup',e=>{ tombolPutar.shift=e.shiftKey; delete tombolPutar[e.key.toLowerCase()]; },true);
+addEventListener('blur',()=>{ for(const k in tombolPutar) delete tombolPutar[k]; });
+function gerakKunci(){   // W/panah atas maju, S/panah bawah mundur, A/D geser, Q/E/panah kiri-kanan putar, Shift lari
   const n=performance.now(), dt=Math.min(0.05,(n-tPutar)/1000); tPutar=n;
-  const arah=(tombolPutar.arrowleft||tombolPutar.q?1:0)-(tombolPutar.arrowright||tombolPutar.e?1:0);
-  if(!arah||bingkaiAktif>=0) return;
-  const lc=$('cam').components['look-controls']; if(lc) lc.yawObject.rotation.y+=arah*1.5*dt;
+  if(!token||bingkaiAktif>=0) return;
+  const T=tombolPutar, lc=$('cam').components['look-controls']; if(!lc) return;
+  const putar=((T.arrowleft||T.q)?1:0)-((T.arrowright||T.e)?1:0); if(putar) lc.yawObject.rotation.y+=putar*1.5*dt;
+  const maju=((T.w||T.arrowup)?1:0)-((T.s||T.arrowdown)?1:0), geser=(T.d?1:0)-(T.a?1:0); if(!maju&&!geser) return;
+  const yaw=lc.yawObject.rotation.y, v=1.6*(T.shift?2:1)*dt, p=$('rig').object3D.position;
+  p.x+=(-Math.sin(yaw)*maju+Math.cos(yaw)*geser)*v; p.z+=(-Math.cos(yaw)*maju-Math.sin(yaw)*geser)*v;
 }
 
 /* VR: kontroler (laser) dan kursor tatap (HP/Cardboard) agar bisa berpindah dengan mengarah ke lantai */
@@ -439,7 +447,7 @@ async function aturMode(mode){
 
 /* ---- Menu yang bisa dilipat ---- */
 let bukaMenu, segarMenu;
-(function(){
+try{ (function(){
   const hud=$('hud'), isi=document.createElement('div'); isi.id='hudIsi';
   const grup=(judul,id)=>{ const d=document.createElement('div'); d.className='grupMenu'; const t=document.createElement('b'); t.textContent=judul;
     const w=document.createElement('div'); w.className='baris'; if(id) w.id=id; d.append(t,w); isi.append(d); return w; };
@@ -451,7 +459,8 @@ let bukaMenu, segarMenu;
   if(sentuh||navigator.xr) tb('mKac','Kacamata VR (2 layar)',()=>{ try{ $('scene').enterVR(); }catch(e){ pesan('Perangkat ini belum mendukung mode kacamata.',6000); } },mode);
   if(!mode.children.length) mode.parentElement.style.display='none';
   if(sentuh) tb('mGeser','',()=>{ geserIkut=!geserIkut; setLook(); segarMenu(); },atur);
-  atur.append($('bBayang'));
+  tb('mDenah','Denah',()=>bukaDenah(),tempat);
+  atur.append($('bBayang')); tb('mZoom','Zoom normal',()=>aturFov(80),atur);
   if(document.fullscreenEnabled) tb('mFull','Layar penuh',()=>{ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen(); },atur);
   const bm=document.createElement('button'); bm.id='bMenu'; bm.textContent='\u2630 Menu'; bm.setAttribute('aria-expanded','false');
   bukaMenu=b=>{ isi.style.display=b?'flex':'none'; bm.setAttribute('aria-expanded',String(b)); };
@@ -460,6 +469,69 @@ let bukaMenu, segarMenu;
     if(j) j.setAttribute('aria-pressed',String(!modeVR)); if(v) v.setAttribute('aria-pressed',String(modeVR));
     if(g) g.textContent='Geser layar: '+(geserIkut?'ikut jari':'tarik dunia'); };
   hud.prepend(bm); hud.insertBefore(isi,$('pager')); bukaMenu(!sentuh); segarMenu();
-})();
+})(); }catch(e){ pesan('Menu gagal dibuat: '+e.message,12000); }
 document.head.insertAdjacentHTML('beforeend','<style>#hud{flex-direction:column;align-items:flex-start;gap:6px}#hudIsi{display:none;flex-direction:column;gap:8px;max-height:72vh;overflow:auto;max-width:calc(100vw - 40px)}'+
   '.grupMenu b{display:block;font-size:12px;color:#5b5346;margin:2px 0 3px}.grupMenu .baris{display:flex;flex-wrap:wrap;gap:6px}#hud button[aria-pressed="true"]{outline:3px solid #1d2a2f}</style>');
+
+/* ================= v2.09 ================= */
+/* ---- zoom: cubit dua jari (HP), roda mouse atau +/- (laptop) ---- */
+let fov=80, jarak0=null;
+function aturFov(v){ fov=Math.max(30,Math.min(90,v)); $('cam').setAttribute('camera','fov',fov); }
+const jarakSentuh=e=>Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY);
+const diJoy=t=>t.target&&t.target.closest&&t.target.closest('#joy,.ui');
+addEventListener('touchstart',e=>{ if(e.touches.length===2&&![...e.touches].some(diJoy)){ jarak0=jarakSentuh(e); $('cam').setAttribute('look-controls','touchEnabled',false); } },{passive:true});
+addEventListener('touchmove',e=>{ if(jarak0===null||e.touches.length!==2) return; const d=jarakSentuh(e); aturFov(fov*jarak0/d); jarak0=d; if(e.cancelable) e.preventDefault(); },{passive:false});
+addEventListener('touchend',e=>{ if(jarak0!==null&&e.touches.length<2){ jarak0=null; $('cam').setAttribute('look-controls','touchEnabled',true); } },{passive:true});
+addEventListener('wheel',e=>{ if(e.target.tagName==='CANVAS') aturFov(fov+(e.deltaY>0?4:-4)); },{passive:true});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.head.insertAdjacentHTML('beforeend','<style>a-scene,.a-canvas{touch-action:none}</style>');
+$('rig').setAttribute('wasd-controls','enabled',false);   // gerak keyboard kini sepenuhnya oleh gerakKunci()
+
+/* ---- denah nyata: gambar kanvas, dipakai di papan aula dan layar penuh ---- */
+function gambarDenah(pos){
+  const W=1280,H=820,c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d');
+  const s=25, ox=50, oy=40, X=x=>ox+(x+10)*s, Z=z=>oy+(z+26)*s;
+  g.fillStyle='#f4ecd8'; g.fillRect(0,0,W,H); g.strokeStyle='#3a2f26'; g.lineWidth=6; g.strokeRect(6,6,W-12,H-12);
+  const R=(x1,z1,x2,z2,isi,garis,tebal)=>{ g.fillStyle=isi; g.fillRect(X(x1),Z(z1),(x2-x1)*s,(z2-z1)*s); if(garis){ g.strokeStyle=garis; g.lineWidth=tebal||4; g.strokeRect(X(x1),Z(z1),(x2-x1)*s,(z2-z1)*s); } };
+  const T=(t,x,y,uk,warna,rata,tebal)=>{ g.font=(tebal?'bold ':'')+uk+'px Georgia, serif'; g.fillStyle=warna||'#2b2118'; g.textAlign=rata||'left'; g.textBaseline='middle'; g.fillText(t,x,y); };
+  const B=(n,x,z)=>{ g.fillStyle='#8a2c1c'; g.beginPath(); g.arc(X(x),Z(z),15,0,7); g.fill(); T(String(n),X(x),Z(z)+1,19,'#fff','center',true); };
+  const bagi=(t,x,y,w,uk,warna,lh)=>{ g.font=uk+'px Georgia, serif'; let baris='',yy=y; t.split(' ').forEach(k=>{ const u=baris?baris+' '+k:k; if(g.measureText(u).width>w&&baris){ T(baris,x,yy,uk,warna); yy+=lh; baris=k; } else baris=u; }); T(baris,x,yy,uk,warna); return yy; };
+  R(-10,0,10,3.4,'#d9cfb6'); R(-10,-12,10,0,'#efe6cf','#3a2f26',5); R(-10,-26,10,-12,'#e1e8d6','#3a2f26',5);
+  R(-9,-9,-4,-3,'#f2d9a8'); R(-1.8,-25.6,1.8,-13.2,'#d9a597');
+  g.setLineDash([10,7]); R(10.8,-9,15.2,-3,'#e7dff0','#6b5b95',3); g.setLineDash([]);
+  g.strokeStyle='#efe6cf'; g.lineWidth=10; g.beginPath(); g.moveTo(X(-2.5),Z(0)); g.lineTo(X(2.5),Z(0)); g.moveTo(X(-1.5),Z(-12)); g.lineTo(X(1.5),Z(-12)); g.stroke();   // pintu
+  g.fillStyle='#c9902f';
+  for(let n=0;n<4;n++){ const z=-14.5-n*3.2; g.fillRect(X(-10)+2,Z(z)-36,8,72); g.fillRect(X(10)-10,Z(z)-36,8,72); }
+  [-5.5,5.5].forEach(x=>{ g.fillRect(X(x)-36,Z(-26)+2,72,8); g.fillRect(X(x)-36,Z(-12)-10,72,8); });
+  for(let n=0;n<4;n++){ const z=-14.5-n*3.2; B(n+1,-8.6,z); B(n+5,8.6,z); }
+  B(9,-5.5,-24.2); B(10,5.5,-24.2); B(11,-5.5,-13.4); B(12,5.5,-13.4);
+  [-15,-18.2,-21.4,-24.2].forEach(z=>R(-0.6,z-0.6,0.6,z+0.6,'#8b867c','#3a2f26',2));
+  g.fillStyle='#2f7d3a'; [[-8.7,-1.4],[8.7,-1.4],[-8.7,-10.6],[8.7,-10.6],[-8.3,-13.2],[8.3,-13.2],[-8.5,-24.9],[8.5,-24.9]].forEach(([x,z])=>{ g.beginPath(); g.arc(X(x),Z(z),8,0,7); g.fill(); });
+  R(5.6,-10.25,7.4,-9.75,'#6d4a2b'); R(7.65,-20.2,8.15,-18.4,'#6d4a2b'); R(-8.15,-20.2,-7.65,-18.4,'#6d4a2b'); R(-8.7,-2.6,-4.3,-2.4,'#3a2f26');
+  T('PLAZA',X(-6),Z(1.7),20,'#6b5a3a','center',true); T('AULA',X(5),Z(-6),22,'#6b5a3a','center',true); T('STUDIO AI',X(-6.5),Z(-6),17,'#7a5a1c','center',true); T('GALERI',X(13),Z(-6),17,'#6b5b95','center',true);
+  B(1,0,1.7); B(2,2,-7.5); B(3,-6.5,-4.5); B(4,-3.2,-19); B(5,0,-19.8); B(6,13,-4.2);
+  g.fillStyle='#2b2118'; g.beginPath(); g.moveTo(X(0),Z(3.2)-12); g.lineTo(X(0)-10,Z(3.2)+4); g.lineTo(X(0)+10,Z(3.2)+4); g.fill(); T('PINTU MASUK',X(4.3),Z(2.6),18,'#2b2118','center',true);
+  g.beginPath(); g.arc(640,100,34,0,7); g.stroke(); T('U',640,88,26,'#2b2118','center',true); g.beginPath(); g.moveTo(640,104); g.lineTo(640,128); g.lineWidth=5; g.stroke();
+  T('DENAH MUSEUM KEUN',700,150,44,'#2b2118','left',true); T('Kurator: Diah Ayu Kurniawati',700,192,22,'#6b5a3a');
+  [['Plaza dan pintu masuk','Titik awal kunjungan'],['Aula','Papan denah, bangku, tanaman'],['Studio AI','Membuat gambar dengan bantuan AI'],
+   ['Ruang Lukisan Era Modernisme','12 bingkai, Romantisme sampai Abstrak'],['Patung dan Pahatan','Empat podium di tengah ruang lukisan'],['Galeri Bersama','Karya siswa (zona di luar gedung, sementara)']]
+   .forEach(([a,b],n)=>{ const y=250+n*72; g.fillStyle='#8a2c1c'; g.beginPath(); g.arc(718,y,16,0,7); g.fill(); T(String(n+1),718,y+1,20,'#fff','center',true); T(a,750,y-10,24,'#2b2118','left',true); bagi(b,750,y+17,500,19,'#5b4a30',22); });
+  g.fillStyle='#c9902f'; g.fillRect(700,704,8,28); T('Bingkai lukisan (angka = nomor bingkai)',722,718,18,'#2b2118');
+  g.fillStyle='#8b867c'; g.fillRect(700,742,28,20); T('Podium',740,752,18,'#2b2118'); g.fillStyle='#2f7d3a'; g.beginPath(); g.arc(850,752,9,0,7); g.fill(); T('Tanaman',868,752,18,'#2b2118');
+  g.fillStyle='#d6322a'; g.beginPath(); g.arc(1010,752,10,0,7); g.fill(); T('Anda di sini',1030,752,18,'#2b2118');
+  g.fillStyle='#2b2118'; g.fillRect(700,786,5*s,6); T('5 m',700+5*s+10,789,17,'#2b2118');
+  if(pos){ const px=Math.max(X(-10.8),Math.min(X(15.5),X(pos.x))), pz=Math.max(Z(-26),Math.min(Z(3.4),Z(pos.z)));
+    g.fillStyle='#d6322a'; g.strokeStyle='#fff'; g.lineWidth=4; g.beginPath(); g.arc(px,pz,13,0,7); g.fill(); g.stroke();
+    if(!pos.statis){ const dx=-Math.sin(pos.yaw), dy=-Math.cos(pos.yaw); g.beginPath(); g.moveTo(px+dx*30,pz+dy*30); g.lineTo(px-dy*10+dx*8,pz+dx*10+dy*8); g.lineTo(px+dy*10+dx*8,pz-dx*10+dy*8); g.closePath(); g.fill(); }
+    T('ANDA DI SINI',px+(px>X(5)?-22:22),pz-24,17,'#d6322a',px>X(5)?'right':'left',true); }
+  return c.toDataURL('image/png');
+}
+let texDenah=null; function denahTex(){ return texDenah||(texDenah=gambarDenah({x:-6.5,z:-2.5,statis:true})); }
+document.body.insertAdjacentHTML('beforeend','<div id="denahBox" class="ui" role="dialog" aria-label="Denah museum" style="display:none;inset:8px;z-index:25;overflow:auto;background:#f4ecd8;padding:8px"><div style="display:flex;gap:6px;margin-bottom:6px"><button id="dnZoom">Perbesar</button><button id="dnTutup" class="alt">Tutup</button></div><img id="dnImg" alt="Denah museum" style="width:100%;display:block"></div>');
+function bukaDenah(){ const p=$('rig').object3D.position, lc=$('cam').components['look-controls'];
+  $('dnImg').src=gambarDenah({x:p.x,z:p.z,yaw:lc?lc.yawObject.rotation.y:0}); $('dnImg').style.width='100%'; $('dnZoom').textContent='Perbesar'; $('denahBox').style.display='block'; if(bukaMenu) bukaMenu(false); }
+$('dnTutup').onclick=()=>{ $('denahBox').style.display='none'; };
+$('dnZoom').onclick=()=>{ const i=$('dnImg'), b=i.style.width==='100%'; i.style.width=b?'220%':'100%'; $('dnZoom').textContent=b?'Perkecil':'Perbesar'; };
+addEventListener('keydown',e=>{ if(e.key==='Escape') $('denahBox').style.display='none'; });
+
+try{ $('ver').textContent+=' \u00b7 museum 2.09'; }catch(e){}   // penanda: museum.js termuat sampai akhir
