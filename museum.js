@@ -1,6 +1,6 @@
-/* Ruang Rupa v2.07 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.08 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
-const WARNA = { Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
+const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
 let koleksi = [], bingkaiAktif = -1, daftarBingkai = [], dekatPintu = false, dariAtas = false, simpanPos = null;
 const kurangiGerak = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -57,7 +57,7 @@ function bangunGedung(g){
   kotak(g,-8.3,1.1,-2.5,0.16,2.2,0.16,gelap); kotak(g,-4.7,1.1,-2.5,0.16,2.2,0.16,gelap);
   kotak(g,-8.3,0.05,-2.5,0.8,0.1,0.8,gelap); kotak(g,-4.7,0.05,-2.5,0.8,0.1,0.8,gelap);
   [[-2.38,0],[-2.62,180]].forEach(([zz,ry])=>{ teksTimbul(g,'DENAH',-6.5,3.3,zz,8,'#f3e6c8',ry);
-    teks(g,'Utara: Museum KEUN\nBarat: Studio AI\nTimur: Galeri Bersama',-6.5,2.2,zz,6,'#f3e6c8',ry); });
+    teks(g,'Utara: Lukisan Era Modernisme\nBarat: Studio AI\nTimur: Galeri Bersama',-6.5,2.2,zz,5,'#f3e6c8',ry); });
 
   [['Studio AI',-9.6,'C',90],['Galeri Bersama',9.6,'D',-90]].forEach(([n,x,z,ry])=>{
     const p = el(g,'a-box',{position:`${x} 2 -6`,width:0.3,height:2.4,depth:3,color:'#8a6a3c',class:'klik'});
@@ -86,7 +86,7 @@ setInterval(()=>{ if(zonaAktif!=='A'||!token) return; const p=$('rig').object3D.
   const d = p.z<12 && p.z>-1.5 && Math.abs(p.x)<4; if(d!==dekatPintu){ dekatPintu=d; bukaPintu(d||p.z<=0); } }, 250);
 
 /* ---------- Ruang Maestro ---------- */
-function bingkaiLukisan(g, k, i, x, z, ry, yaw){
+function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
   const kosong = !k, w = k && WARNA[k.aliran] || '#9a9082';
   const f = el(g,'a-entity',{position:`${x} 2.4 ${z}`,rotation:`0 ${ry} 0`});
   el(f,'a-box',{width:2.9,height:2.3,depth:0.12,color:'#3a2f26'});
@@ -94,6 +94,7 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw){
     'aria-label':kosong?'Bingkai kosong':`${k.judul}, ${k.pelukis}`});
   if(k && k.gambar){ const im=el(f,'a-image',{width:2.5,height:1.9,position:'0 0 0.08',src:k.gambar,class:'klik'});
     im.addEventListener('click',()=>{ if(klikSah()) buka(i); }); im.addEventListener('error',()=>im.remove()); }
+  if(!kosong&&k.aliran) teks(f,String(k.aliran).toUpperCase(),0,1.52,0.07,5,'#e8c85a');
   if(kosong) el(f,'a-text',{value:'Segera hadir',align:'center',width:2.4,wrapCount:14,position:'0 0 0.1',color:'#6b6458'});
   el(f,'a-box',{width:3.1,height:0.62,depth:0.06,position:'0 -1.62 0.06',color:'#2b2118'});                       // papan nama di bawah lukisan
   teks(f,'No. '+(i+1)+(kosong?'  Segera hadir':'  '+k.judul),0,-1.51,0.1,3.4,'#f3e6c8');
@@ -103,16 +104,22 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw){
   el(f,'a-plane',{width:3.4,height:3,position:'0 0.2 0.09',material:{src:cahaya(),transparent:true,blending:'additive',opacity:0.5,depthWrite:false,shader:'flat'}});
   el(f,'a-text',{id:'tanda'+i,value:'',align:'center',width:4,position:'1.1 1.0 0.12',color:'#ffd54a'}); // tempat centang (Tahap 3)
   if(k) kanvas.addEventListener('click',()=>{ if(klikSah()) buka(i); });
-  daftarBingkai[i] = { x, z, ry, yaw, k };
+  daftarBingkai[i] = { x, z, ry, yaw, k, sx, sz };
 }
 function bangunRuangMaestro(g){
-  daftarBingkai = [];
-  kotak(g,0,0.03,-19,19,0.04,13,'#f1ede4',{class:'klik lantai'}); teksTimbul(g,RUANG_TAHAP1.toUpperCase(),0,6.5,-25.6,14,'#c9902f');
-  const data = koleksi.filter(k=>k.ruang===RUANG_TAHAP1).sort((a,b)=>a.urutan-b.urutan).slice(0,8);
-  // 4 di dinding barat (menghadap timur), 4 di dinding timur (menghadap barat)
-  for(let i=0;i<8;i++){ const barat=i<4, z=-14.5-(i%4)*3.2;
-    bingkaiLukisan(g, data[i], i, barat?-9.6:9.6, z, barat?90:-90, barat?Math.PI/2:-Math.PI/2); }
-  if(!data.length) pesan('Koleksi masih kosong: semua bingkai bertuliskan "Segera hadir".',6000);
+  daftarBingkai=[];
+  kotak(g,0,0.03,-19,19,0.04,13,'#f1ede4',{class:'klik lantai'});
+  teksTimbul(g,'RUANG LUKISAN',0,7.0,-25.6,14,'#c9902f'); teksTimbul(g,'ERA MODERNISME',0,6.0,-25.6,14,'#c9902f');
+  // 12 bingkai: 4 dinding barat, 4 dinding timur, 2 dinding belakang (kiri-kanan patung), 2 dinding depan (kiri-kanan pintu)
+  const S=[]; for(let n=0;n<4;n++) S.push([-9.6,-14.5-n*3.2,90,Math.PI/2,-5.4,-14.5-n*3.2]);
+  for(let n=0;n<4;n++) S.push([9.6,-14.5-n*3.2,-90,-Math.PI/2,5.4,-14.5-n*3.2]);
+  S.push([-5.5,-25.64,0,0,-5.5,-21.44],[5.5,-25.64,0,0,5.5,-21.44],[-5.5,-12.28,180,Math.PI,-5.5,-16.48],[5.5,-12.28,180,Math.PI,5.5,-16.48]);
+  // nomor bingkai = urutan; yang nomornya bentrok atau di luar 1-12 mengisi bingkai kosong yang tersisa
+  const slot=Array(S.length).fill(null), sisa=[];
+  koleksi.slice().sort((a,b)=>a.urutan-b.urutan).forEach(k=>{ const n=Math.floor(k.urutan)-1; if(n>=0&&n<S.length&&!slot[n]) slot[n]=k; else sisa.push(k); });
+  sisa.forEach(k=>{ const n=slot.indexOf(null); if(n>=0) slot[n]=k; });
+  S.forEach((s,n)=>bingkaiLukisan(g,slot[n],n,s[0],s[1],s[2],s[3],s[4],s[5]));
+  if(!koleksi.length) pesan('Koleksi masih kosong: semua bingkai bertuliskan "Segera hadir".',6000);
 }
 
 /* ---------- Kamera mendekat + panel info ---------- */
@@ -125,7 +132,7 @@ function buka(i){
   if(bingkaiAktif<0){ const p=$('rig').object3D.position; simpanPos={x:p.x,z:p.z}; }
   bingkaiAktif = i; const k = b.k, rig = $('rig'), p = rig.object3D.position;
   rig.setAttribute('wasd-controls','enabled',false);
-  const tx = b.x + (b.ry===90?4.2:-4.2), tz = b.z, x0=p.x, z0=p.z;
+  const tx = b.sx!==undefined?b.sx:b.x + (b.ry===90?4.2:-4.2), tz = b.sz!==undefined?b.sz:b.z, x0=p.x, z0=p.z;
   tween(0,1,kurangiGerak?0:1100,u=>{ rig.setAttribute('position',`${x0+(tx-x0)*u} 0 ${z0+(tz-z0)*u}`); if(u===1) arahKamera(b.yaw); });
   $('iJudul').textContent = k.judul;
   $('iMeta').textContent = [k.pelukis,k.tahun,k.aliran].filter(Boolean).join(', ');
@@ -206,7 +213,7 @@ let prevPos = null;
 let jalanId=0; function batalJalan(){ jalanId++; }
 function jalanKe(pt){
   if(dariAtas||bingkaiAktif>=0) return;
-  if(sentuh&&!$('scene').is('vr-mode')) return;
+  if(sentuh&&!modeVR&&!$('scene').is('vr-mode')) return;
   const rig=$('rig'), p=rig.object3D.position, x0=p.x, z0=p.z, d0=Math.hypot(pt.x-x0,pt.z-z0), n=Math.max(1,Math.ceil(d0/0.25));
   let aman=0; for(let k=1;k<=n;k++){ const u=k/n; if(dalamPadat(x0+(pt.x-x0)*u,z0+(pt.z-z0)*u)) break; aman=u; }
   const tx=x0+(pt.x-x0)*aman, tz=z0+(pt.z-z0)*aman, d=Math.hypot(tx-x0,tz-z0); if(d<0.2) return;
@@ -226,13 +233,13 @@ let awal=null, geser=0;
 addEventListener('pointerdown',e=>{ awal={x:e.clientX,y:e.clientY}; geser=0; });
 addEventListener('pointermove',e=>{ if(awal) geser=Math.max(geser,Math.hypot(e.clientX-awal.x,e.clientY-awal.y)); });
 addEventListener('pointerup',()=>setTimeout(()=>{ awal=null; },0));
-function klikSah(){ return geser<10; }      // geser layar untuk menoleh tidak dihitung klik
+function klikSah(){ return modeVR||geser<10; }      // geser layar untuk menoleh tidak dihitung klik
 $('cam').setAttribute('look-controls','magicWindowTrackingEnabled',false);   // matikan giroskop HP (penyebab layar bergoyang)
 
 let joy={x:0,y:0}, tJoy=performance.now(), joyId=null;
 const sentuh = matchMedia('(pointer:coarse)').matches;
 if(sentuh){
-  document.head.insertAdjacentHTML('beforeend','<style>#joy{position:fixed;right:16px;bottom:92px;width:92px;height:92px;border-radius:50%;background:#ffffff40;border:2px solid #ffffff90;z-index:11;touch-action:none;display:none}#joy i{position:absolute;left:28px;top:28px;width:36px;height:36px;border-radius:50%;background:#2f6f8fb0}</style>');
+  document.head.insertAdjacentHTML('beforeend','<style>#joy{position:fixed;right:16px;bottom:92px;width:92px;height:92px;border-radius:50%;background:rgba(20,40,50,.38);border:3px solid rgba(255,255,255,.95);box-shadow:0 0 0 2px rgba(20,40,50,.6),0 2px 10px rgba(0,0,0,.35);z-index:11;touch-action:none;display:none}#joy i{position:absolute;left:26px;top:26px;width:34px;height:34px;border-radius:50%;background:#1d5f7c;border:2px solid #fff}</style>');
   document.body.insertAdjacentHTML('beforeend','<div id="joy" role="application" aria-label="Kendali jalan"><i></i></div>');
   const j=$('joy'), kn=j.firstChild;
   const atur=e=>{ const r=j.getBoundingClientRect(); let dx=(e.clientX-r.left-r.width/2)/(r.width*0.36), dy=(e.clientY-r.top-r.height/2)/(r.width*0.36), mg=Math.hypot(dx,dy);
@@ -242,7 +249,7 @@ if(sentuh){
   j.addEventListener('pointermove',e=>{ if(e.pointerId===joyId) atur(e); });
   ['pointerup','pointercancel','lostpointercapture'].forEach(n=>j.addEventListener(n,lepas));
   addEventListener('blur',lepas); document.addEventListener('visibilitychange',lepas);
-  setInterval(()=>{ j.style.display=(token&&$('hud').style.display!=='none'&&bingkaiAktif<0&&!dariAtas)?'block':'none'; if(joyId===null&&(joy.x||joy.y)) lepas(); },300);
+  setInterval(()=>{ j.style.display=(token&&$('hud').style.display!=='none'&&bingkaiAktif<0&&!dariAtas&&!modeVR)?'block':'none'; if(joyId===null&&(joy.x||joy.y)) lepas(); },300);
 }
 function gerakJoy(){   // joystick: kecepatan tetap 1,6 m/s, searah pandangan; berhenti bila tidak ada jari di joystick
   const n=performance.now(), dt=Math.min(0.05,(n-tJoy)/1000); tJoy=n;
@@ -269,7 +276,7 @@ const PATUNG=[
 function bangunPatung(g){
   SOLID.length=SOLID_DASAR;
   PATUNG.forEach((s,n)=>{
-    const i=8+n, z=s.z, w=el(g,'a-entity',{position:`0 0 ${z}`},'dekor'); SOLID.push([-1.1,1.1,z-1.1,z+1.1]);
+    const i=12+n, z=s.z, w=el(g,'a-entity',{position:`0 0 ${z}`},'dekor'); SOLID.push([-1.1,1.1,z-1.1,z+1.1]);
     el(w,'a-box',{position:'0 0.5 0',width:1.2,height:1,depth:1.2,color:'#efe8d9'});
     el(w,'a-box',{position:'0 1.02 0',width:1.3,height:0.06,depth:1.3,color:'#d9a21b'});
     papanPatung(w,s.k.judul);
@@ -342,7 +349,7 @@ function bangunDekor(g){
     el(g,'a-sphere',{position:`${x} 7.1 ${z}`,radius:0.28,material:'color:#fff1c8;emissive:#ffd98a;emissiveIntensity:1','segments-width':12,'segments-height':8}); });
   // karpet Ruang Maestro
   el(g,'a-box',{position:'0 0.045 -19.4',width:3.6,height:0.02,depth:12.4,color:'#7a2f2a',shadow:'cast:false;receive:true'}); el(g,'a-box',{position:'0 0.055 -19.4',width:3.1,height:0.02,depth:11.9,color:'#9a4a38',shadow:'cast:false;receive:true'});
-  [[-8.7,-1.4,1,1],[8.7,-1.4,1,1],[-8.7,-10.6,1.1,2],[8.7,-10.6,1.1,2],[-7.2,-13,1,2],[7.2,-13,1,2],[-7.2,-25,1.1,1],[7.2,-25,1.1,1]].forEach(([x,z,s,j])=>tanaman(g,x,z,s,j));
+  [[-8.7,-1.4,1,1],[8.7,-1.4,1,1],[-8.7,-10.6,1.1,2],[8.7,-10.6,1.1,2],[-8.3,-13.2,1,2],[8.3,-13.2,1,2],[-8.5,-24.9,1.1,1],[8.5,-24.9,1.1,1]].forEach(([x,z,s,j])=>tanaman(g,x,z,s,j));
   bangku(g,6.5,-10,0); bangku(g,7.9,-19.3,90); bangku(g,-7.9,-19.3,90);
   g.querySelectorAll('.dekor *').forEach(e=>{ if(e.tagName!=='A-TEXT') e.setAttribute('shadow','cast:true;receive:true'); });
   g.querySelectorAll('.lantai').forEach(e=>e.setAttribute('shadow','cast:false;receive:true'));
@@ -401,3 +408,58 @@ document.head.insertAdjacentHTML('beforeend','<style>.ui{box-sizing:border-box}'
  '@media (pointer:coarse){#hud{top:6px;left:6px;padding:8px;gap:4px}#hud button{padding:6px 9px;font-size:13px}}</style>');
 (function(){ const inf=$('info'), aks=inf.querySelector('.aksi'), isi=document.createElement('div'); isi.className='isi';
   [...inf.children].forEach(c=>{ if(c!==aks) isi.append(c); }); inf.prepend(isi); })();
+
+/* ================= v2.08 ================= */
+Object.assign(WARNA,{Naturalisme:'#6f8f5a',Realisme:'#8a7a64',Romantisme:'#7b5a8c',Abstrak:'#c9902f',Nusantara:'#a9703a'});
+let modeVR=false, gyroOn=false, geserIkut=true;     // geserIkut: geser ke kiri = pandangan ikut ke kiri
+
+function buatGaze(){ if($('gaze')) return; const c=document.createElement('a-entity'); c.id='gaze';
+  c.setAttribute('cursor','fuse:true;fuseTimeout:1200'); c.setAttribute('raycaster','objects:.klik;far:40'); c.setAttribute('position','0 0 -1');
+  c.setAttribute('geometry','primitive:ring;radiusInner:0.014;radiusOuter:0.026'); c.setAttribute('material','color:#ffffff;shader:flat;opacity:0.9'); $('cam').append(c); }
+function hapusGaze(){ const c=$('gaze'); if(c) c.remove(); }
+$('scene').addEventListener('exit-vr',()=>{ if(modeVR) buatGaze(); });
+
+function setLook(){   // pasang ulang kontrol pandang: sensor gerak HP (gyro) dan arah geser
+  const cam=$('cam'), lc=cam.components['look-controls'], y=lc?lc.yawObject.rotation.y:0;
+  cam.removeAttribute('look-controls'); cam.setAttribute('look-controls',{magicWindowTrackingEnabled:gyroOn,reverseTouchDrag:geserIkut});
+  setTimeout(()=>arahKamera(y,0),80);
+}
+setLook();
+
+async function aturMode(mode){
+  if(mode==='vr'){
+    try{ if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+        if(await DeviceOrientationEvent.requestPermission()!=='granted'){ pesan('Izin sensor gerak ditolak. Mode VR memakai sensor HP.',7000); return; } } }
+    catch(e){ pesan('Sensor gerak tidak dapat diaktifkan: '+e.message,7000); return; }
+    modeVR=true; gyroOn=true; batalJalan(); joy={x:0,y:0}; joyId=null; setLook(); buatGaze(); bukaMenu(false);
+    pesan('Mode VR: gerakkan HP untuk melihat sekeliling. Tatap lantai sekitar 1 detik untuk berjalan, tatap lukisan untuk memilihnya.',9000);
+  } else { modeVR=false; gyroOn=false; setLook(); hapusGaze(); }
+  segarMenu();
+}
+
+/* ---- Menu yang bisa dilipat ---- */
+let bukaMenu, segarMenu;
+(function(){
+  const hud=$('hud'), isi=document.createElement('div'); isi.id='hudIsi';
+  const grup=(judul,id)=>{ const d=document.createElement('div'); d.className='grupMenu'; const t=document.createElement('b'); t.textContent=judul;
+    const w=document.createElement('div'); w.className='baris'; if(id) w.id=id; d.append(t,w); isi.append(d); return w; };
+  const tempat=grup('Tempat'), mode=grup('Mode gerak'), atur=grup('Pengaturan'), adm=grup('Admin','hudAdmin'); adm.parentElement.style.display='none';
+  ['[data-zona="A"]','[data-zona="C"]','[data-zona="D"]','#bMasuk','#bMaestro','#bAtas'].forEach(s=>{ const b=hud.querySelector(s); if(b) tempat.append(b); });
+  $('bMaestro').textContent='Ruang Lukisan';
+  const tb=(id,t,fn,tgt)=>{ const b=document.createElement('button'); b.id=id; b.className='alt'; b.textContent=t; b.onclick=fn; tgt.append(b); return b; };
+  if(sentuh){ tb('mJoy','Joystick',()=>aturMode('joy'),mode); tb('mVR','VR layar penuh',()=>aturMode('vr'),mode); }
+  if(sentuh||navigator.xr) tb('mKac','Kacamata VR (2 layar)',()=>{ try{ $('scene').enterVR(); }catch(e){ pesan('Perangkat ini belum mendukung mode kacamata.',6000); } },mode);
+  if(!mode.children.length) mode.parentElement.style.display='none';
+  if(sentuh) tb('mGeser','',()=>{ geserIkut=!geserIkut; setLook(); segarMenu(); },atur);
+  atur.append($('bBayang'));
+  if(document.fullscreenEnabled) tb('mFull','Layar penuh',()=>{ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen(); },atur);
+  const bm=document.createElement('button'); bm.id='bMenu'; bm.textContent='\u2630 Menu'; bm.setAttribute('aria-expanded','false');
+  bukaMenu=b=>{ isi.style.display=b?'flex':'none'; bm.setAttribute('aria-expanded',String(b)); };
+  bm.onclick=()=>bukaMenu(isi.style.display!=='flex');
+  segarMenu=()=>{ const j=$('mJoy'), v=$('mVR'), g=$('mGeser');
+    if(j) j.setAttribute('aria-pressed',String(!modeVR)); if(v) v.setAttribute('aria-pressed',String(modeVR));
+    if(g) g.textContent='Geser layar: '+(geserIkut?'ikut jari':'tarik dunia'); };
+  hud.prepend(bm); hud.insertBefore(isi,$('pager')); bukaMenu(!sentuh); segarMenu();
+})();
+document.head.insertAdjacentHTML('beforeend','<style>#hud{flex-direction:column;align-items:flex-start;gap:6px}#hudIsi{display:none;flex-direction:column;gap:8px;max-height:72vh;overflow:auto;max-width:calc(100vw - 40px)}'+
+  '.grupMenu b{display:block;font-size:12px;color:#5b5346;margin:2px 0 3px}.grupMenu .baris{display:flex;flex-wrap:wrap;gap:6px}#hud button[aria-pressed="true"]{outline:3px solid #1d2a2f}</style>');

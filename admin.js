@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.07 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Pengguna, Log. Dimuat setelah museum.js.
+/* Ruang Rupa v2.08 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Pengguna, Log. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
@@ -9,12 +9,12 @@ const opt=(v,t,sel)=>h('option',{value:v,textContent:t,selected:!!sel});
 
 function siapkanAdmin(){
   if((RANK[saya.peran]||0)<2||$('bAdmin')) return;
-  $('hud').insertAdjacentHTML('beforeend','<button id="bAdmin">Panel Admin</button>'); $('bAdmin').onclick=bukaAdmin;
+  ($('hudAdmin')||$('hud')).insertAdjacentHTML('beforeend','<button id="bAdmin">Panel Admin</button>'); if($('hudAdmin')) $('hudAdmin').parentElement.style.display='block'; $('bAdmin').onclick=bukaAdmin;
 }
 function tutupAdmin(){ $('adm').style.display='none'; }
 $('admTutup').onclick=tutupAdmin;
 addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('adm').style.display==='block') tutupAdmin(); });
-const keLoginAsli=keLogin; keLogin=function(i){ tutupAdmin(); const b=$('bAdmin'); if(b) b.remove(); keLoginAsli(i); };
+const keLoginAsli=keLogin; keLogin=function(i){ tutupAdmin(); const b=$('bAdmin'); if(b) b.remove(); if($('hudAdmin')) $('hudAdmin').parentElement.style.display='none'; keLoginAsli(i); };
 
 async function bukaAdmin(){
   $('adm').style.display='block';
@@ -78,7 +78,7 @@ async function renderPengguna(){
 }
 
 /* ===== v2.04: tab Lukisan, Soal, Log ===== */
-const ALIRAN=['Impresionisme','Kubisme','Ekspresionisme','Surealisme','Nusantara'];
+const ALIRAN=['Romantisme','Naturalisme','Realisme','Impresionisme','Ekspresionisme','Kubisme','Surealisme','Abstrak','Nusantara'];
 const fld=(label,el)=>h('div',{},h('label',{textContent:label,style:'display:block;font-weight:600;margin-top:8px'}),el);
 const ta=(v,n)=>h('textarea',{value:v||'',rows:n||3,style:'width:100%;box-sizing:border-box;padding:6px'});
 const inp=(v,ph,max)=>h('input',{value:v==null?'':String(v),placeholder:ph||'',maxLength:max||120,style:'width:100%;box-sizing:border-box'});
@@ -94,10 +94,10 @@ function kecilkan(f){   // perkecil ke <= 1024 px lalu jadi JPEG base64
 async function renderLukisan(){
   const isi=$('admIsi'); isi.textContent='Memuat...';
   let l; try{ l=await gs('adminDaftarLukisan'); }catch(e){ isi.textContent=e.message; return; }
-  l.sort((a,b)=>a.ruang.localeCompare(b.ruang)||a.urutan-b.urutan);
+  l.sort((a,b)=>a.urutan-b.urutan);
   const unggah=h('button',{textContent:'Unggah Lukisan',style:'font-size:16px;padding:12px 20px',onclick:()=>formLukisan(null)});
   const baris=l.map((x,i)=>{
-    const tetangga=d=>{ for(let j=i+d;j>=0&&j<l.length;j+=d){ if(l[j].ruang===x.ruang&&l[j].status!=='nonaktif') return l[j]; } return null; };
+    const tetangga=d=>{ for(let j=i+d;j>=0&&j<l.length;j+=d){ if(l[j].status!=='nonaktif') return l[j]; } return null; };
     const aksi=[h('button',{className:'alt',textContent:'Ubah',onclick:()=>formLukisan(x)})];
     if(x.status!=='nonaktif'){
       [['\u25B2',-1,'Naik'],['\u25BC',1,'Turun']].forEach(([s,d,tt])=>{ const n=tetangga(d); if(n) aksi.push(h('button',{className:'alt',textContent:s,title:tt,onclick:async()=>{
@@ -105,29 +105,27 @@ async function renderLukisan(){
       aksi.push(h('button',{className:'alt',textContent:'Nonaktifkan',onclick:async()=>{ if(!confirm('Nonaktifkan "'+x.judul+'"?')) return;
         try{ await gs('adminHapusLukisan',x.id); renderLukisan(); }catch(e){ pesan(e.message); } }}));
     }
-    return h('tr',{},h('td',{textContent:x.urutan}),h('td',{textContent:x.ruang}),h('td',{textContent:x.judul+(x.contoh?' (contoh)':'')}),h('td',{textContent:x.status}),h('td',{},...aksi)); });
+    return h('tr',{},h('td',{textContent:x.urutan}),h('td',{textContent:x.aliran}),h('td',{textContent:x.judul+(x.contoh?' (contoh)':'')}),h('td',{textContent:x.status}),h('td',{},...aksi)); });
   const bar=[unggah];
   if(l.some(x=>x.contoh&&x.status!=='nonaktif')) bar.push(h('button',{className:'alt',textContent:'Nonaktifkan semua data contoh',onclick:async()=>{
     if(!confirm('Nonaktifkan semua lukisan bertanda contoh?')) return; try{ const n=await gs('adminNonaktifkanContoh'); pesan(n+' lukisan contoh dinonaktifkan.'); renderLukisan(); }catch(e){ pesan(e.message); } }}));
   isi.replaceChildren(h('div',{className:'bar'},...bar),
     h('p',{style:'font-size:13px;color:#555',textContent:'Gunakan karya domain publik (pelukis wafat sebelum 1956) atau karya sendiri. Lukisan hanya bisa terbit jika sumber dan lisensi terisi.'}),
-    h('div',{className:'tbl'},h('table',{},h('tr',{},...['No','Ruang','Judul','Status',''].map(t=>h('th',{textContent:t}))),...baris)));
+    h('div',{className:'tbl'},h('table',{},h('tr',{},...['No','Aliran','Judul','Status',''].map(t=>h('th',{textContent:t}))),...baris)));
 }
 function formLukisan(x){
   x=x||{}; let baru=null;
   const judul=inp(x.judul,'judul karya',120), pelukis=inp(x.pelukis,'nama pelukis',80), tahun=inp(x.tahun,'mis. 1872',20),
     aliran=h('select',{},...ALIRAN.map(a=>opt(a,a,a===(x.aliran||ALIRAN[0])))),
-    ruang=h('select',{},...ALIRAN.map((a,i)=>opt(a,a+(i?' (ruangan belum dibangun)':''),a===(x.ruang||ALIRAN[0])))),
-    urutan=h('input',{type:'number',min:1,max:8,value:x.urutan||1,style:'width:80px'}),
+    urutan=h('input',{type:'number',min:1,max:12,value:x.urutan||1,style:'width:80px'}),
     jelas=ta(x.penjelasan,4), fakta=ta(x.fakta,2), mot=ta(x.motivasi,2),
     sumber=inp(x.sumber,'sumber gambar (nama museum/situs + tautan)',300), lisensi=inp(x.lisensi,'mis. Domain publik atau CC BY 4.0',100);
-  aliran.onchange=()=>{ ruang.value=aliran.value; };
   const prev=h('img',{alt:'Pratinjau gambar',src:x.gambar||'',style:'max-width:100%;max-height:220px;margin-top:8px;border-radius:4px;display:'+(x.gambar?'block':'none')});
   const file=h('input',{type:'file',accept:'image/jpeg,image/png'});
   file.onchange=async()=>{ const f=file.files[0]; if(!f) return; try{ baru=await kecilkan(f); prev.src=baru; prev.style.display='block'; }catch(e){ pesan(e.message); } };
   const simpan=async(aksi,btn)=>{ btn.disabled=true;
     try{ if(baru){ x.gambar=(await gs('adminUnggahGambar',baru)).url; baru=null; }
-      await gs('adminSimpanLukisan',{id:x.id||'',aksi,judul:judul.value,pelukis:pelukis.value,tahun:tahun.value,aliran:aliran.value,ruang:ruang.value,urutan:urutan.value,
+      await gs('adminSimpanLukisan',{id:x.id||'',aksi,judul:judul.value,pelukis:pelukis.value,tahun:tahun.value,aliran:aliran.value,ruang:'Modernisme',urutan:urutan.value,
         gambar:x.gambar||'',penjelasan:jelas.value,fakta:fakta.value,motivasi:mot.value,sumber:sumber.value,lisensi:lisensi.value});
       pesan(aksi==='terbit'?'Lukisan diterbitkan.':'Draf disimpan.'); renderLukisan();
     }catch(e){ pesan(e.message,8000); btn.disabled=false; } };
@@ -135,14 +133,14 @@ function formLukisan(x){
   bDraf.onclick=()=>simpan('draf',bDraf); bTerbit.onclick=()=>simpan('terbit',bTerbit);
   $('admIsi').replaceChildren(h('h3',{textContent:x.id?'Ubah lukisan':'Unggah lukisan',style:'margin:0'}),
     fld('Gambar (JPG/PNG; di HP boleh dari galeri atau kamera)',file),prev,fld('Judul',judul),fld('Pelukis',pelukis),fld('Tahun',tahun),
-    fld('Aliran',aliran),fld('Ruang',ruang),fld('Nomor urut di ruang (1-8)',urutan),fld('Penjelasan karya',jelas),fld('Fakta menarik',fakta),fld('Kalimat motivasi',mot),
+    fld('Aliran',aliran),fld('Nomor bingkai di Ruang Lukisan Era Modernisme (1-12)',urutan),fld('Penjelasan karya',jelas),fld('Fakta menarik',fakta),fld('Kalimat motivasi',mot),
     fld('Sumber',sumber),fld('Lisensi',lisensi),h('div',{className:'bar',style:'margin-top:12px'},bDraf,bTerbit,bBatal));
 }
 async function renderSoal(){
   const isi=$('admIsi'); isi.textContent='Memuat...';
   let l; try{ l=(await gs('adminDaftarLukisan')).filter(x=>x.status!=='nonaktif'); }catch(e){ isi.textContent=e.message; return; }
   if(!l.length){ isi.textContent='Belum ada lukisan. Buat lukisan di tab Lukisan dahulu.'; return; }
-  const sel=h('select',{},...l.map(x=>opt(x.id,x.ruang+' no.'+x.urutan+': '+x.judul+(x.status==='terbit'?'':' ('+x.status+')')))), area=h('div');
+  const sel=h('select',{},...l.map(x=>opt(x.id,'No.'+x.urutan+' ('+x.aliran+'): '+x.judul+(x.status==='terbit'?'':' ('+x.status+')')))), area=h('div');
   isi.replaceChildren(h('div',{className:'bar'},h('b',{textContent:'Lukisan:'}),sel),area);
   sel.onchange=()=>muatSoal(sel.value,area); muatSoal(sel.value,area);
 }
