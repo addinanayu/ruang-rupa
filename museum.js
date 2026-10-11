@@ -636,7 +636,7 @@ addEventListener('keydown',e=>{ if(e.key==='Escape') $('denahBox').style.display
 
 try{ $('ver').textContent+=' \u00b7 museum 2.09c'; }catch(e){}   // penanda: museum.js termuat sampai akhir
 
-/* ================= v2.12: menu tombol 3D yang ringkas (tampilan + tutup otomatis di layar sentuh) ================= */
+/* ================= v2.12: menu tombol 3D, grup menu berbentuk dropdown (tampilan + buka-tutup grup; isi menu tidak diubah) ================= */
 /* Kartu putih dipindah dari wadah #hud ke isi menu #hudIsi: saat tertutup hanya tombol Menu (biru asli) yang terlihat. */
 document.head.insertAdjacentHTML('beforeend',`<style>
 #hud.ui{background:transparent;box-shadow:none;padding:0;border-radius:0;gap:8px;top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px))}
@@ -647,18 +647,34 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 #hud.ui #bMenu{font-size:15px;min-height:40px;padding:8px 18px}
 #hud.ui button:hover{filter:brightness(1.08)}
 #hud.ui button:active,#hud.ui #bMenu[aria-expanded="true"]{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 var(--s),0 2px 5px rgba(0,0,0,.25)}
-#hudIsi{width:min(440px,calc(100vw - 28px));max-width:none;max-height:min(70vh,calc(100vh - 84px));overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;
-  background:rgba(247,245,240,.94);border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:10px 12px 14px;gap:10px;box-shadow:0 10px 28px rgba(0,0,0,.28);animation:hudMuncul .16s ease-out}
-.grupMenu b{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6a604f;margin:0 0 6px}
-.grupMenu .baris{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#hudIsi{width:min(400px,calc(100vw - 28px));max-width:none;max-height:min(70vh,calc(100vh - 84px));overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+  background:rgba(247,245,240,.94);border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:10px;gap:6px;box-shadow:0 10px 28px rgba(0,0,0,.28);animation:hudMuncul .16s ease-out}
+.grupMenu .gHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;min-height:40px;padding:8px 12px;border-radius:10px;background:rgba(0,0,0,.06);
+  color:#2b2118;font-size:14px;font-weight:700;letter-spacing:0;text-transform:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.grupMenu .gHead:hover{background:rgba(0,0,0,.1)}
+.grupMenu .gHead:focus-visible{outline:3px solid #f2b705}
+.grupMenu .gHead::after{content:"\\25BE";font-size:15px;transition:transform .15s}
+.grupMenu.buka .gHead{background:rgba(47,111,143,.16);color:#1b4760}
+.grupMenu.buka .gHead::after{transform:rotate(180deg)}
+.grupMenu:not(.buka) .baris{display:none}
+.grupMenu.buka .baris{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 2px 6px;animation:hudMuncul .14s ease-out}
 #hud.ui .grupMenu .baris button{width:100%;padding:7px 8px;font-size:13px;line-height:1.2}
 #pager{background:var(--paper);padding:3px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 @keyframes hudMuncul{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-@media (max-width:640px){#hudIsi{width:min(300px,calc(100vw - 28px));max-height:min(58vh,calc(100vh - 150px))}.grupMenu .baris{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-height:480px) and (pointer:coarse){#hudIsi{width:min(420px,66vw);max-height:calc(100vh - 66px)}.grupMenu .baris{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){#hudIsi{width:min(290px,calc(100vw - 28px));max-height:min(62vh,calc(100vh - 150px))}}
+@media (max-height:480px) and (pointer:coarse){#hudIsi{width:min(400px,66vw);max-height:calc(100vh - 66px)}.grupMenu.buka .baris{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (pointer:coarse){#hud.ui button{min-height:40px}}
-@media (prefers-reduced-motion:reduce){#hudIsi{animation:none}#hud.ui button{transition:none}}
+@media (prefers-reduced-motion:reduce){#hudIsi,.grupMenu.buka .baris{animation:none}#hud.ui button,.grupMenu .gHead::after{transition:none}}
 </style>`);
-/* Layar sentuh: setelah memilih tempat (grup pertama), menu menutup sendiri supaya layar tidak tertutup. Pengaturan tetap terbuka. */
-try{ const isiM=$('hudIsi'); if(isiM&&sentuh) isiM.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button'); if(!b) return;
-  if(b.closest('.grupMenu')===isiM.querySelector('.grupMenu')) setTimeout(()=>{ if(bukaMenu) bukaMenu(false); },150); }); }catch(e){}
+/* Dropdown: judul grup menjadi pembuka-penutup. Hanya satu grup terbuka sekaligus. Layar sentuh: semua tertutup; laptop: grup Tempat terbuka. */
+try{ const isiM=$('hudIsi'); if(isiM){
+  const grups=[...isiM.querySelectorAll('.grupMenu')];
+  const set=(g,b)=>{ g.classList.toggle('buka',b); const h=g.querySelector('.gHead'); if(h) h.setAttribute('aria-expanded',String(b)); };
+  const ganti=g=>{ const b=!g.classList.contains('buka'); grups.forEach(x=>set(x,false)); if(b) set(g,true); };
+  grups.forEach(g=>{ const h=g.querySelector('b'); if(!h) return; h.classList.add('gHead'); h.setAttribute('role','button'); h.tabIndex=0; h.setAttribute('aria-expanded','false');
+    h.addEventListener('click',()=>ganti(g)); h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); ganti(g); } }); });
+  if(!sentuh&&grups[0]) set(grups[0],true);
+  /* Layar sentuh: setelah memilih tempat (grup pertama), menu menutup sendiri supaya layar tidak tertutup. Pengaturan tetap terbuka. */
+  if(sentuh) isiM.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button'); if(!b) return;
+    if(b.closest('.grupMenu')===grups[0]) setTimeout(()=>{ if(bukaMenu) bukaMenu(false); },150); });
+} }catch(e){}
