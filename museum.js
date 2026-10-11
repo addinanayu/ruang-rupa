@@ -6,6 +6,9 @@ let koleksi = [], bingkaiAktif = -1, daftarBingkai = [], dekatPintu = false, dar
 const kurangiGerak = matchMedia('(prefers-reduced-motion: reduce)').matches;
 POS.A = [0, 0, 16]; POS.C = [-5, 0, -5];   // Studio AI sekarang di sudut barat aula (di dalam gedung)
 
+/* PERBAIKAN: status tombol keyboard harus dideklarasikan SEBELUM cekTabrak berjalan (menghindari galat 'tPutar before initialization') */
+const tombolPutar={}; let tPutar=performance.now();
+
 /* ---------- UI: panel info + layar fade (HTML, bukan teks 3D) ---------- */
 document.head.insertAdjacentHTML('beforeend', `<style>
 #fade{position:fixed;inset:0;background:#1d1812;opacity:0;pointer-events:none;transition:opacity .5s;z-index:30}
@@ -357,7 +360,7 @@ function bangunDekor(g){
 }
 
 /* Laptop: putar dengan panah kiri/kanan atau Q/E (panah kiri/kanan tidak lagi menggeser ke samping) */
-const tombolPutar={}; let tPutar=performance.now();
+/* (tombolPutar dan tPutar sudah dideklarasikan di bagian atas file) */
 const KUNCI=['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright'];
 addEventListener('keydown',e=>{
   tombolPutar.shift=e.shiftKey;
