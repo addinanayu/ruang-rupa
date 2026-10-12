@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.09 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Pengguna, Log. Dimuat setelah museum.js.
+/* Ruang Rupa v2.13 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Rekap, Pengguna, Log. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
@@ -21,12 +21,12 @@ async function bukaAdmin(){
   try{ kelasData=await gs('adminDaftarKelas'); }catch(e){ tutupAdmin(); return pesan(e.message); }
   pilihTab(kelasData.length?'kelas':'mulai');
 }
-const TABS=[['mulai','Langkah awal',2],['lukisan','Lukisan',2],['kelas','Kelas',2],['soal','Soal',2],['pengguna','Pengguna',2],['log','Log',3]];
+const TABS=[['mulai','Langkah awal',2],['lukisan','Lukisan',2],['kelas','Kelas',2],['soal','Soal',2],['rekap','Rekap',2],['pengguna','Pengguna',2],['log','Log',3]];
 function pilihTab(t){
   tabAdm=t; const ada=TABS.filter(x=>(RANK[saya.peran]||0)>=x[2]);
   $('admTab').replaceChildren(...ada.map(([k,n])=>{ const b=h('button',{className:'tab',textContent:n,onclick:()=>pilihTab(k)});
     b.setAttribute('role','tab'); b.setAttribute('aria-selected',String(k===t)); return b; }));
-  ({mulai:renderMulai,lukisan:renderLukisan,kelas:renderKelas,soal:renderSoal,pengguna:renderPengguna,log:renderLog})[t]();
+  ({mulai:renderMulai,lukisan:renderLukisan,kelas:renderKelas,soal:renderSoal,rekap:renderRekap,pengguna:renderPengguna,log:renderLog})[t]();
 }
 async function renderMulai(){
   let l=[]; try{ l=await gs('adminDaftarLukisan'); }catch(e){}
@@ -180,4 +180,28 @@ async function renderLog(){
   }catch(e){ isi.textContent=e.message; }
 }
 
-try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.09'; }catch(e){}
+/* ===== v2.13: tab Rekap (poin per siswa dan per kelas, ekspor CSV). Hanya siswa yang dihitung. ===== */
+async function renderRekap(){
+  const isi=$('admIsi'); isi.textContent='Memuat...';
+  let r; try{ r=await gs('adminRekapPoin'); }catch(e){ isi.textContent=e.message; return; }
+  const sel=h('select',{},opt('*','Semua kelas'),...r.kelas.map(k=>opt(k.id,k.nama)));
+  const tSiswa=h('div',{className:'tbl'});
+  const gambarSiswa=()=>{ const f=sel.value, L=r.siswa.filter(s=>f==='*'||s.kelasId===f);
+    tSiswa.replaceChildren(L.length?h('table',{},h('tr',{},...['No','Nama','Email','Kelas','Poin','Dikerjakan','Nilai penuh'].map(t=>h('th',{textContent:t}))),
+      ...L.map((s,i)=>h('tr',{},h('td',{textContent:String(i+1)}),h('td',{textContent:s.nama||'-'}),h('td',{textContent:s.email}),h('td',{textContent:s.kelas||'-'}),
+        h('td',{textContent:String(s.poin)}),h('td',{textContent:s.dikerjakan+'/'+r.lukisan.length}),h('td',{textContent:String(s.penuh)})))):h('p',{textContent:'Belum ada siswa.'})); };
+  sel.onchange=gambarSiswa; gambarSiswa();
+  const unduh=h('button',{textContent:'Unduh CSV',onclick:async ev=>{ ev.target.disabled=true;
+    try{ const f=await gs('adminEksporRekap'), u=URL.createObjectURL(new Blob([f.csv],{type:'text/csv;charset=utf-8'})), a=h('a',{href:u,download:f.nama});
+      document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),2000);
+    }catch(e){ pesan(e.message); }
+    ev.target.disabled=false; }});
+  const tKelas=h('div',{className:'tbl'},h('table',{},h('tr',{},...['Kelas','Siswa','Total poin','Rata-rata'].map(t=>h('th',{textContent:t}))),
+    ...r.kelas.map(k=>h('tr',{},h('td',{textContent:k.nama}),h('td',{textContent:String(k.jumlah)}),h('td',{textContent:String(k.totalPoin)}),h('td',{textContent:String(k.rata)})))));
+  const tLuk=h('div',{className:'tbl'},h('table',{},h('tr',{},...['Bingkai','Lukisan','Soal aktif','Siswa mengerjakan','Nilai penuh'].map(t=>h('th',{textContent:t}))),
+    ...r.lukisan.map(l=>h('tr',{},h('td',{textContent:String(l.urutan)}),h('td',{textContent:l.judul}),h('td',{textContent:String(l.soal)}),h('td',{textContent:String(l.dikerjakan)}),h('td',{textContent:String(l.penuh)})))));
+  isi.replaceChildren(h('div',{className:'bar'},sel,unduh,h('button',{className:'alt',textContent:'Muat ulang',onclick:renderRekap})),
+    h('h4',{textContent:'Per siswa (urut poin tertinggi)'}),tSiswa,h('h4',{textContent:'Per kelas'}),tKelas,h('h4',{textContent:'Per lukisan'}),tLuk);
+}
+
+try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.13'; }catch(e){}

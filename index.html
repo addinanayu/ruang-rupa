@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- Ruang Rupa v2.09 -->
+<!-- Ruang Rupa v2.13 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -68,7 +68,7 @@
   <div id="hasil"></div>
 </div>
 <div id="pesan" class="ui" role="status"></div>
-<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.09</div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.13</div>
 
 <a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
@@ -91,6 +91,7 @@ const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.goo
 const FB = { apiKey:'', authDomain:'ruang-rupa.firebaseapp.com', databaseURL:'https://ruang-rupa-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'ruang-rupa' };
 /* ============================================= */
 
+const VERSI = '2.13';   // harus sama dengan nomor di Code.gs (VERSI_)
 const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
 let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
 let halaman = 0, zonaAktif = 'A', sudahMasuk = false; const PER = 12;
@@ -124,6 +125,7 @@ async function setelahLogin(t){
   token=t; try{ sessionStorage.setItem('rr_token',t); }catch(e){}
   try{
     const r=await gs('getProfile');
+    cekVersiServer(r.versi);
     saya.email=r.email; saya.peran=r.peran; saya.kelas=r.kelas; $('akun').textContent='Masuk sebagai '+r.email.replace('#pw',' (akun sandi)');
     if(false){   /* v2.09: siswa tidak memilih kelas di lobi; kelas diatur guru di Panel Admin */ const ks=await gs('getKelasAktif'), sel=$('kelas'); sel.innerHTML=''; sel.add(new Option('Pilih kelas...',''));
       ks.forEach(k=>sel.add(new Option(k.nama,k.id))); $('kelasBox').style.display='block'; } else $('kelasBox').style.display='none';
@@ -131,6 +133,11 @@ async function setelahLogin(t){
     if(sudahMasuk) return;
     $('login').style.display='none'; $('lobi').style.display='block';
   }catch(e){ if(token) pesan(e.message,9000); }
+}
+/* Label versi: tampilkan versi server (Code.gs) dan peringatkan bila berbeda dari halaman */
+function cekVersiServer(v){
+  try{ const e=$('ver'); e.textContent=e.textContent.replace(/ \u00b7 server .*$/,'')+' \u00b7 server '+(v||'lama'); }catch(e){}
+  if(v!==VERSI) pesan('Server (Apps Script) berversi '+(v||'lama')+', halaman berversi '+VERSI+'. Minta pemilik memasang Code.gs terbaru (Deploy > New version).',12000);
 }
 function infoLogin(t){ $('infoLogin').textContent=t; }
 function mulaiGoogle(){
@@ -255,8 +262,8 @@ function mulaiMultiplayer(){
 window.addEventListener('error',e=>{ try{ pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); }catch(x){} });
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=2.11"></script>
-<script src="admin.js?v=2.11"></script>
-<script src="akun.js?v=2.11"></script>
+<script src="museum.js?v=2.13"></script>
+<script src="admin.js?v=2.13"></script>
+<script src="akun.js?v=2.13"></script>
 </body>
 </html>

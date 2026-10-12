@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.09 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.13 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -31,6 +31,7 @@ document.body.insertAdjacentHTML('beforeend', `<div id="fade"></div>
 <small id="iSumber"></small>
 <div class="aksi"><button id="bKerjakan">Kerjakan</button><button id="bNext" class="alt">Lukisan berikutnya</button><button id="bKembali" class="alt">Kembali</button></div></div>`);
 $('hud').insertAdjacentHTML('beforeend', '<button id="bMasuk" class="alt">Masuk gedung</button><button id="bAtas" class="alt">Lihat dari atas</button>');
+$('hud').insertAdjacentHTML('beforeend', '<span id="hudPoin" style="display:none;font-weight:700" role="status" aria-live="polite"></span>');
 document.querySelector('[data-zona="A"]').textContent = 'Museum';
 
 /* ---------- Pembantu pembuat entitas ---------- */
@@ -109,7 +110,8 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
   el(f,'a-box',{width:0.06,height:0.06,depth:0.35,position:'0 1.3 0.2',color:'#2b2118'});                         // lampu sorot lukisan: lengan + kap + cahaya palsu (ringan)
   el(f,'a-cone',{position:'0 1.3 0.38','radius-bottom':0.16,'radius-top':0.05,height:0.2,rotation:'-35 0 0',color:'#d9a21b'});
   el(f,'a-plane',{width:3.4,height:3,position:'0 0.2 0.09',material:{src:cahaya(),transparent:true,blending:'additive',opacity:0.5,depthWrite:false,shader:'flat'}});
-  el(f,'a-text',{id:'tanda'+i,value:'',align:'center',width:4,position:'1.1 1.0 0.12',color:'#ffd54a'}); // tempat centang (Tahap 3)
+  const td=el(f,'a-circle',{id:'tanda'+i,radius:0.2,position:'1.05 0.8 0.13',color:'#3f7d4f',visible:false});   // tanda selesai (Tahap 3): hijau 'OK' = sudah dikerjakan, emas '100' = semua benar
+  el(td,'a-text',{value:'OK',align:'center',width:1.4,position:'0 0 0.01',color:'#ffffff'});
   if(k) kanvas.addEventListener('click',()=>{ if(klikSah()) buka(i); });
   daftarBingkai[i] = { x, z, ry, yaw, k, sx, sz };
 }
@@ -149,11 +151,11 @@ function buka(i){
   $('info').style.display='block'; $('info').scrollTop=0; $('bKembali').focus();
 }
 function tutup(){
-  if(bingkaiAktif<0) return; bingkaiAktif=-1; $('info').style.display='none';
+  if(bingkaiAktif<0) return; bingkaiAktif=-1; $('info').style.display='none'; $('latihan').style.display='none';
   /* gerak keyboard ditangani gerakKunci() */ 0; // kamera dilepas, siswa bebas berjalan lagi
 }
 $('bKembali').onclick = tutup;
-$('bKerjakan').onclick = ()=>pesan('Latihan soal hadir di Tahap 3.');
+$('bKerjakan').onclick = ()=>mulaiLatihan();
 $('bNext').onclick = ()=>{ let j=bingkaiAktif; const N=daftarBingkai.length; for(let n=0;n<N;n++){ j=(j+1)%N; if(daftarBingkai[j]&&daftarBingkai[j].k){ buka(j); return; } } };
 addEventListener('keydown',e=>{ if(e.key==='Escape') tutup(); });
 
@@ -196,6 +198,7 @@ async function bangunMuseum(){
   const g=document.createElement('a-entity'); g.classList.add('zm'); d.append(g);
   bangunGedung(g); bangunRuangMaestro(g); bangunPatung(g); bangunDekor(g); spanduk(g);
   g.querySelectorAll('.lantai').forEach(f=>f.addEventListener('click',e=>{ if(e.detail&&e.detail.intersection) jalanKe(e.detail.intersection.point); }));
+  muatPoin();   // Tahap 3: poin dan tanda selesai (tidak menahan pemuatan museum)
 }
 
 /* ---------- v1.05: berjalan lebih natural ---------- */
@@ -634,7 +637,6 @@ $('dnTutup').onclick=()=>{ $('denahBox').style.display='none'; };
 $('dnZoom').onclick=()=>{ const i=$('dnImg'), b=i.style.width==='100%'; i.style.width=b?'220%':'100%'; $('dnZoom').textContent=b?'Perkecil':'Perbesar'; };
 addEventListener('keydown',e=>{ if(e.key==='Escape') $('denahBox').style.display='none'; });
 
-try{ $('ver').textContent+=' \u00b7 museum 2.09c'; }catch(e){}   // penanda: museum.js termuat sampai akhir
 
 /* ================= v2.12: menu ringkas gaya tombol 3D. Deretan tombol grup ke samping, sub menu turun ke bawah (tampilan saja; isi menu tidak diubah) ================= */
 document.head.insertAdjacentHTML('beforeend',`<style>
@@ -686,3 +688,81 @@ try{ const isiM=$('hudIsi'); if(isiM){
   if(sentuh) isiM.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button'); if(!b) return;
     if(b.closest('.grupMenu')===grups[0]){ tutupSemua(); setTimeout(()=>{ if(bukaMenu) bukaMenu(false); },150); } });
 } }catch(e){}
+
+/* ================= v2.13: Tahap 3 - latihan soal, poin, tanda selesai =================
+   Penilaian dan poin dihitung di SERVER (getSoalLukisan tanpa kunci, kirimJawabanLukisan, getPoinSaya). Semua teks lewat textContent. */
+document.head.insertAdjacentHTML('beforeend',`<style>
+#latihan{right:10px;bottom:10px;width:min(420px,94vw);max-height:80vh;overflow:auto;display:none;background:#fbf8f1;box-sizing:border-box}
+#latihan h3{margin:0 0 2px;font:700 18px/1.2 Georgia,serif}
+#latihan .soal{margin:12px 0;padding-bottom:10px;border-bottom:1px solid #ddd}
+#latihan .soal p{margin:0 0 6px;font-weight:600}
+#latihan label.op{display:flex;gap:8px;align-items:flex-start;padding:8px;margin:4px 0;border:1px solid #cfc7b8;border-radius:6px;cursor:pointer;background:#fff}
+#latihan label.op input{margin-top:4px}
+#latihan .aksi{position:sticky;bottom:0;background:#fbf8f1;padding:8px 0 2px;display:flex;gap:6px;flex-wrap:wrap}
+#latihan .ok{color:#2b6b3c}#latihan .salah{color:#9c3322}
+#latihan .bahas{background:#f0ebdf;border-radius:6px;padding:6px 8px;margin-top:6px;font-size:14px}
+#latihan .ringkas{font-size:16px;font-weight:700;margin:8px 0}
+</style>`);
+document.body.insertAdjacentHTML('beforeend','<div id="latihan" class="ui" role="dialog" aria-labelledby="lJudul"><h3 id="lJudul"></h3><p id="lMeta" style="margin:0;color:#5b5346;font-size:13px"></p><div id="lIsi"></div></div>');
+
+const hh=(t,p,...c)=>{ const e=document.createElement(t); Object.assign(e,p||{}); c.flat().forEach(x=>e.append(x)); return e; };
+let poinSaya={hitung:false,total:0,selesai:{}}, latihanSibuk=false;
+
+function perbaruiPoinUI(){
+  const hp=$('hudPoin'); if(hp){ hp.style.display=poinSaya.hitung?'inline':'none'; hp.textContent='Poin: '+poinSaya.total; }
+  daftarBingkai.forEach((b,i)=>{ if(i>=12) return; const t=document.getElementById('tanda'+i); if(!t) return;
+    const s=b&&b.k&&poinSaya.selesai[b.k.id]; t.setAttribute('visible',!!s);
+    if(s){ t.setAttribute('color',s==='p'?'#d9a21b':'#3f7d4f'); const tx=t.querySelector('a-text'); if(tx) tx.setAttribute('value',s==='p'?'100':'OK'); } });
+}
+async function muatPoin(){ try{ poinSaya=await gs('getPoinSaya'); }catch(e){ return; } perbaruiPoinUI(); }
+
+function kembaliKeInfo(){ $('latihan').style.display='none'; $('info').style.display='block'; $('bKembali').focus(); }
+function bukaPanelLatihan(){ $('info').style.display='none'; $('latihan').style.display='block'; $('latihan').scrollTop=0; }
+
+async function mulaiLatihan(){
+  const b=daftarBingkai[bingkaiAktif], k=b&&b.k; if(!k||latihanSibuk) return;
+  if(!k.id){ pesan('Karya ini tidak punya soal latihan. Latihan ada pada lukisan di dinding.',6000); return; }
+  latihanSibuk=true;
+  try{
+    const r=await gs('getSoalLukisan',k.id);
+    if(!r.soal.length) pesan('Belum ada soal untuk lukisan ini. Minta guru menambahkannya.',6000); else tampilSoal(k,r);
+  }catch(e){ pesan(e.message,6000); }
+  latihanSibuk=false;
+}
+
+function tampilSoal(k,r){
+  $('lJudul').textContent='Latihan: '+k.judul;
+  $('lMeta').textContent=r.hitung?(r.sudahPernah?'Kamu sudah pernah mengerjakan ini. Mengulang boleh, tetapi tidak menambah poin.':'Jawab semua soal. Poin dihitung dari jawaban pertama pada tiap soal.'):'Latihan bebas: hanya siswa yang mendapat poin.';
+  const jawab={}, kirim=hh('button',{textContent:'Kirim jawaban',disabled:true});
+  const cek=()=>{ kirim.disabled=Object.keys(jawab).length<r.soal.length; };
+  const blok=r.soal.map((s,n)=>hh('div',{className:'soal'},hh('p',{textContent:(n+1)+'. '+s.pertanyaan}),
+    ...s.opsi.map(o=>{ const rb=hh('input',{type:'radio',name:'q'+n,value:String(o.i)}); rb.onchange=()=>{ jawab[s.id]=o.i; cek(); };
+      return hh('label',{className:'op'},rb,hh('span',{textContent:o.t})); })));
+  kirim.onclick=async()=>{ kirim.disabled=true; kirim.textContent='Memeriksa...';
+    try{ tampilHasil(k,await gs('kirimJawabanLukisan',k.id,jawab)); }
+    catch(e){ pesan(e.message,6000); kirim.disabled=false; kirim.textContent='Kirim jawaban'; } };
+  $('lIsi').replaceChildren(...blok,hh('div',{className:'aksi'},kirim,hh('button',{className:'alt',textContent:'Kembali ke lukisan',onclick:kembaliKeInfo})));
+  bukaPanelLatihan();
+}
+
+function tampilHasil(k,hs){
+  if(hs.hitung){ poinSaya.hitung=true; poinSaya.total=hs.poinTotal; poinSaya.selesai[k.id]=hs.status; perbaruiPoinUI(); }
+  $('lMeta').textContent='Hasil latihan';
+  const ringkas=[hh('p',{className:'ringkas',textContent:'Benar '+hs.benar+' dari '+hs.total+' soal'})];
+  ringkas.push(hh('p',{textContent:hs.hitung
+    ?(hs.poinBaru>0?('Poin baru: +'+hs.poinBaru+(hs.bonus?' (termasuk bonus '+hs.bonus+')':'')+'. Total poinmu: '+hs.poinTotal+'.')
+      :('Tidak ada poin baru: poin hanya dihitung dari jawaban pertama. Total poinmu: '+hs.poinTotal+'.'))
+    :'Latihan ini tidak menambah poin karena hanya siswa yang dihitung.'}));
+  const rinci=hs.hasil.map((x,n)=>hh('div',{className:'soal'},hh('p',{textContent:(n+1)+'. '+x.pertanyaan}),
+    hh('p',{className:x.benar?'ok':'salah',textContent:(x.benar?'Benar':'Belum tepat')+(x.hitungPoin&&x.poinDidapat?' (+'+x.poinDidapat+' poin)':'')}),
+    hh('p',{textContent:'Jawabanmu: '+x.opsi[x.pilihan]}),
+    ...(x.benar?[]:[hh('p',{textContent:'Jawaban yang benar: '+x.opsi[x.kunci]})]),
+    ...(x.pembahasan?[hh('div',{className:'bahas',textContent:x.pembahasan})]:[])));
+  $('lIsi').replaceChildren(...ringkas,...rinci,hh('div',{className:'aksi'},
+    hh('button',{textContent:'Ulangi latihan',onclick:mulaiLatihan}),
+    hh('button',{className:'alt',textContent:'Lukisan berikutnya',onclick:()=>{ $('latihan').style.display='none'; $('bNext').click(); }}),
+    hh('button',{className:'alt',textContent:'Kembali ke lukisan',onclick:kembaliKeInfo})));
+  $('latihan').scrollTop=0;
+}
+
+try{ $('ver').textContent+=' \u00b7 museum 2.13'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
