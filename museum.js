@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.14 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.15 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -56,8 +56,9 @@ function bangunGedung(g){
   kotak(g,0,10,0.4,10,1.6,0.3,'#2b2118'); teksTimbul(g,'RUANG RUPA',0,10,0.62,18,'#f3e6c8');
   kotak(g,0,6.3,-0.1,3,0.4,0.4,gelap);
   // pintu dua daun; tiap daun bergeser ke samping saat terbuka
-  const pk = el(g,'a-box',{id:'daunK',position:'-0.75 2 0.1',width:1.5,height:4,depth:0.2,color:'#6d4a2b'});
-  const pn = el(g,'a-box',{id:'daunN',position:'0.75 2 0.1',width:1.5,height:4,depth:0.2,color:'#6d4a2b'});
+  // v2.15: lubang pintu lebar 5 (x -2.5..2.5), tinggi 4. Tiap daun 2.54 x 4.02 supaya menutup rapat tanpa celah ke dinding/ambang.
+  const pk = el(g,'a-box',{id:'daunK',position:'-1.25 2 0.1',width:2.54,height:4.02,depth:0.2,color:'#6d4a2b'});
+  const pn = el(g,'a-box',{id:'daunN',position:'1.25 2 0.1',width:2.54,height:4.02,depth:0.2,color:'#6d4a2b'});
   // dinding aula/ruang: sekat antara aula (z 0..-12) dan Ruang Maestro (z -12..-26), celah pintu tengah
   kotak(g,-5.75,4,-12,8.5,8,0.4,batu); kotak(g,5.75,4,-12,8.5,8,0.4,batu); kotak(g,0,6,-12,3,4,0.4,batu);
   // aula: papan denah + penunjuk
@@ -83,7 +84,7 @@ function bangunGedung(g){
 }
 let daun = null;
 function bukaPintu(buka){
-  const t = kurangiGerak ? 0 : 600, ke = buka ? 2.6 : 0.75;
+  const t = kurangiGerak ? 0 : 600, ke = buka ? 3.9 : 1.25;   // terbuka: daun masuk ke ketebalan dinding (x 2.5..5)
   [['daunK',-1],['daunN',1]].forEach(([id,s])=>{ const d=$(id); if(!d) return;
     d.removeAttribute('animation'); d.setAttribute('animation',{property:'position',to:`${s*ke} 2 0.1`,dur:t}); });
 }
@@ -765,4 +766,4 @@ function tampilHasil(k,hs){
   $('latihan').scrollTop=0;
 }
 
-try{ $('ver').textContent+=' \u00b7 museum 2.14'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
+try{ $('ver').textContent+=' \u00b7 museum 2.15'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)

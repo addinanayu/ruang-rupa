@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.14 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Moderasi, Rekap, Pengguna, Log. Dimuat setelah museum.js.
+/* Ruang Rupa v2.15 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Moderasi, Rekap, Pengguna, Log. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
@@ -95,23 +95,37 @@ async function renderLukisan(){
   const isi=$('admIsi'); isi.textContent='Memuat...';
   let l; try{ l=await gs('adminDaftarLukisan'); }catch(e){ isi.textContent=e.message; return; }
   l.sort((a,b)=>a.urutan-b.urutan);
-  const unggah=h('button',{textContent:'Unggah Lukisan',style:'font-size:16px;padding:12px 20px',onclick:()=>formLukisan(null)});
-  const baris=l.map((x,i)=>{
-    const tetangga=d=>{ for(let j=i+d;j>=0&&j<l.length;j+=d){ if(l[j].status!=='nonaktif') return l[j]; } return null; };
+  /* v2.15: tampilkan SEMUA 12 bingkai. Bingkai tanpa lukisan tampil "Kosong" dengan tombol "Isi bingkai N". */
+  const slot={};
+  l.filter(x=>x.status!=='nonaktif').forEach(x=>{ const n=x.urutan; if(!(n>=1&&n<=12)) return; if(!slot[n]||(x.status==='terbit'&&slot[n].status!=='terbit')) slot[n]=x; });
+  const kosong=[]; for(let n=1;n<=12;n++) if(!slot[n]) kosong.push(n);
+  const urlAman=u=>/^https:\/\/lh3\.googleusercontent\.com\/d\/[\w-]+$/.test(String(u||''));
+  const nonaktifkan=x=>h('button',{className:'alt',textContent:'Nonaktifkan',onclick:async()=>{ if(!confirm('Nonaktifkan "'+x.judul+'"?')) return;
+    try{ await gs('adminHapusLukisan',x.id); renderLukisan(); }catch(e){ pesan(e.message); } }});
+  const thumb=x=>{ const t=h('img',{alt:x.gambar?'Gambar '+x.judul:'',style:'width:56px;height:42px;object-fit:cover;border-radius:3px;background:#eee'}); if(urlAman(x.gambar)) t.src=x.gambar; return t; };
+  const baris12=[]; for(let n=1;n<=12;n++){
+    const x=slot[n];
+    if(!x){ baris12.push(h('tr',{},h('td',{textContent:String(n)}),h('td',{textContent:'-'}),h('td',{textContent:'Kosong',style:'color:#8a7f6c'}),h('td',{textContent:'-'}),h('td',{textContent:'-'}),
+      h('td',{},h('button',{textContent:'Isi bingkai '+n,onclick:()=>formLukisan({urutan:n})})))); continue; }
     const aksi=[h('button',{className:'alt',textContent:'Ubah',onclick:()=>formLukisan(x)})];
-    if(x.status!=='nonaktif'){
-      [['\u25B2',-1,'Naik'],['\u25BC',1,'Turun']].forEach(([s,d,tt])=>{ const n=tetangga(d); if(n) aksi.push(h('button',{className:'alt',textContent:s,title:tt,onclick:async()=>{
-        try{ await gs('adminTukarUrutan',x.id,n.id); renderLukisan(); }catch(e){ pesan(e.message); } }})); });
-      aksi.push(h('button',{className:'alt',textContent:'Nonaktifkan',onclick:async()=>{ if(!confirm('Nonaktifkan "'+x.judul+'"?')) return;
-        try{ await gs('adminHapusLukisan',x.id); renderLukisan(); }catch(e){ pesan(e.message); } }}));
-    }
-    return h('tr',{},h('td',{textContent:x.urutan}),h('td',{textContent:x.aliran}),h('td',{textContent:x.judul+(x.contoh?' (contoh)':'')}),h('td',{textContent:x.status}),h('td',{},...aksi)); });
-  const bar=[unggah];
+    [['\u25B2',-1,'Tukar dengan bingkai sebelumnya'],['\u25BC',1,'Tukar dengan bingkai berikutnya']].forEach(([s,dd,tt])=>{ const o=slot[n+dd]; if(o) aksi.push(h('button',{className:'alt',textContent:s,title:tt,onclick:async()=>{
+      try{ await gs('adminTukarUrutan',x.id,o.id); renderLukisan(); }catch(e){ pesan(e.message); } }})); });
+    aksi.push(nonaktifkan(x));
+    baris12.push(h('tr',{},h('td',{textContent:String(n)}),h('td',{},thumb(x)),h('td',{textContent:x.judul+(x.pelukis?' - '+x.pelukis:'')+(x.contoh?' (contoh)':'')}),h('td',{textContent:x.aliran}),h('td',{textContent:x.status}),h('td',{},...aksi)));
+  }
+  const lain=l.filter(x=>slot[x.urutan]!==x);
+  const bar=[h('button',{textContent:kosong.length?'Isi bingkai kosong berikutnya (No '+kosong[0]+')':'Unggah Lukisan',style:'font-size:16px;padding:12px 20px',onclick:()=>formLukisan({urutan:kosong[0]||1})})];
   if(l.some(x=>x.contoh&&x.status!=='nonaktif')) bar.push(h('button',{className:'alt',textContent:'Nonaktifkan semua data contoh',onclick:async()=>{
     if(!confirm('Nonaktifkan semua lukisan bertanda contoh?')) return; try{ const n=await gs('adminNonaktifkanContoh'); pesan(n+' lukisan contoh dinonaktifkan.'); renderLukisan(); }catch(e){ pesan(e.message); } }}));
-  isi.replaceChildren(h('div',{className:'bar'},...bar),
-    h('p',{style:'font-size:13px;color:#555',textContent:'Gunakan karya domain publik (pelukis wafat sebelum 1956) atau karya sendiri. Lukisan hanya bisa terbit jika sumber dan lisensi terisi.'}),
-    h('div',{className:'tbl'},h('table',{},h('tr',{},...['No','Aliran','Judul','Status',''].map(t=>h('th',{textContent:t}))),...baris)));
+  const bagian=[h('div',{className:'bar'},...bar),
+    h('p',{style:'font-size:14px;margin:6px 0',textContent:'Bingkai terisi: '+(12-kosong.length)+' dari 12'+(kosong.length?'. Kosong: No '+kosong.join(', ')+'.':'.')}),
+    h('p',{style:'font-size:13px;color:#555',textContent:'Gunakan karya domain publik (pelukis wafat sebelum 1956) atau karya sendiri. Lukisan hanya bisa terbit jika gambar, sumber, dan lisensi terisi.'}),
+    h('div',{className:'tbl'},h('table',{},h('tr',{},...['No','Gambar','Judul','Aliran','Status',''].map(t=>h('th',{textContent:t}))),...baris12))];
+  if(lain.length) bagian.push(h('h4',{textContent:'Draf lain dan lukisan tidak aktif',style:'margin:14px 0 4px'}),
+    h('div',{className:'tbl'},h('table',{},h('tr',{},...['No','Aliran','Judul','Status',''].map(t=>h('th',{textContent:t}))),
+      ...lain.map(x=>h('tr',{},h('td',{textContent:String(x.urutan)}),h('td',{textContent:x.aliran}),h('td',{textContent:x.judul}),h('td',{textContent:x.status}),
+        h('td',{},h('button',{className:'alt',textContent:'Ubah',onclick:()=>formLukisan(x)}),...(x.status!=='nonaktif'?[nonaktifkan(x)]:[])))))));
+  isi.replaceChildren(...bagian);
 }
 function formLukisan(x){
   x=x||{}; let baru=null;
@@ -229,4 +243,4 @@ async function renderModerasi(){
   muat();
 }
 
-try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.14'; }catch(e){}
+try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.15'; }catch(e){}

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- Ruang Rupa v2.14 -->
+<!-- Ruang Rupa v2.15 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -68,7 +68,7 @@
   <div id="hasil"></div>
 </div>
 <div id="pesan" class="ui" role="status"></div>
-<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.14</div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.15</div>
 
 <a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
@@ -91,7 +91,7 @@ const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.goo
 const FB = { apiKey:'', authDomain:'ruang-rupa.firebaseapp.com', databaseURL:'https://ruang-rupa-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'ruang-rupa' };
 /* ============================================= */
 
-const VERSI = '2.14';   // harus sama dengan nomor di Code.gs (VERSI_)
+const VERSI = '2.15';   // harus sama dengan nomor di Code.gs (VERSI_)
 const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
 let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
 let halaman = 0, zonaAktif = 'A', sudahMasuk = false; const PER = 12;
@@ -236,16 +236,24 @@ function mulaiMultiplayer(){
   if(!saya.id) return;   // v2.14: kunci Firebase = ID anonim dari server (email tidak lagi dikirim ke klien lain)
   firebase.initializeApp(FB); db=firebase.database();
   const id=saya.id, ref=db.ref('posisi/'+id);
-  ref.onDisconnect().remove();
   const r2=v=>Math.round(v*100)/100;
-  let last=null;
-  const kirim=()=>{ if(document.hidden) return;
+  const warna=/^#[0-9a-f]{6}$/i.test(saya.avatar)?saya.avatar:'#c0392b';
+  let last=null, tulisAkhir=0, galatMP=false;
+  const kirim=(paksa)=>{ if(document.hidden) return;
     const p=$('rig').object3D.position, ry=$('cam').object3D.rotation.y;
     const cur={x:r2(p.x),y:r2(p.y),z:r2(p.z),ry:r2(ry)};
-    if(last && Math.abs(cur.x-last.x)<0.1 && Math.abs(cur.z-last.z)<0.1 && Math.abs(cur.ry-last.ry)<0.1) return;
-    last=cur; ref.set(Object.assign({n:'',c:saya.avatar,t:Date.now()},cur)); };   // n dikosongkan: nama TIDAK dipercaya dari klien, diambil dari server
-  kirim(); setInterval(kirim,2000);
-  document.addEventListener('visibilitychange',()=>{ if(document.hidden) ref.remove(); else { last=null; kirim(); } });
+    // v2.15: tulis ulang tiap 15 dtk walau diam (denyut), supaya avatar tidak hilang bila koneksi sempat putus dan node dihapus server (onDisconnect)
+    if(!paksa && last && Math.abs(cur.x-last.x)<0.1 && Math.abs(cur.z-last.z)<0.1 && Math.abs(cur.ry-last.ry)<0.1 && Date.now()-tulisAkhir<15000) return;
+    last=cur; tulisAkhir=Date.now();
+    // n dikosongkan: nama TIDAK dipercaya dari klien, diambil dari server. t = waktu server (untuk membuang avatar basi).
+    const p2=ref.set(Object.assign({n:'',c:warna,t:firebase.database.ServerValue.TIMESTAMP},cur));
+    if(p2&&p2.catch) p2.catch(e=>{ if(galatMP) return; galatMP=true; pesan('Posisimu tidak terkirim ke Firebase ('+((e&&e.code)||'galat')+'), jadi pemain lain tidak melihat avatarmu. Periksa Rules Firebase.',14000); }); };
+  // sambung ulang: pasang lagi onDisconnect dan tulis ulang posisi setiap kali terhubung (juga saat pertama)
+  db.ref('.info/connected').on('value',s=>{ if(s.val()===true){ ref.onDisconnect().remove(); kirim(true); } });
+  let selisih=0; db.ref('.info/serverTimeOffset').on('value',s=>{ selisih=Number(s.val())||0; });
+  const segar=o=>Number(o&&o.t)>0 && (Date.now()+selisih-Number(o.t))<90000;
+  kirim(true); setInterval(kirim,2000);
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) ref.remove(); else { last=null; kirim(true); } });
 
   /* Pemain lain: badan sederhana + papan nama "Nama + poin" yang selalu menghadap kamera. Nama dan poin dari SERVER (getPapanNama, cache 45 dtk). */
   const lain={}, papan={}; let tunda=0;
@@ -258,26 +266,30 @@ function mulaiMultiplayer(){
   setInterval(()=>{ if(document.hidden) return; const c=$('rig').object3D.position;
     Object.keys(lain).forEach(k=>{ const lb=lain[k].lb, p=lb.object3D.position; lb.object3D.rotation.y=Math.atan2(c.x-p.x,c.z-p.z); }); },120);
   const batas=v=>Math.max(-60,Math.min(60,Number(v)||0));
+  const buang=k=>{ const o=lain[k]; if(o){ o.e.remove(); o.lb.remove(); delete lain[k]; } };
+  setInterval(()=>{ Object.keys(lain).forEach(k=>{ if(!segar(lain[k].o)) buang(k); }); },30000);   // avatar tanpa denyut >90 dtk dibuang
   const taruh=s=>{ const k=s.key; if(k===id) return; const o=s.val(); if(!o) return;
+    if(!segar(o)){ buang(k); return; }
     if(!lain[k]){ const e=document.createElement('a-entity'), w=/^#[0-9a-f]{6}$/i.test(o.c)?o.c:'#888888';
       const t=(induk,tag,at)=>{ const q=document.createElement(tag); for(const n in at) q.setAttribute(n,at[n]); induk.append(q); return q; };
       t(e,'a-sphere',{radius:0.3,position:'0 1.5 0',color:w}); t(e,'a-cylinder',{radius:0.25,height:1,position:'0 0.7 0',color:w});
       const lb=document.createElement('a-entity'); t(lb,'a-plane',{width:1.9,height:0.62,color:'#1d1812',opacity:0.7,transparent:true});
       const teks=t(lb,'a-text',{value:'Pemain',align:'center',width:2.6,position:'0 0 0.01',color:'#ffffff'});
-      $('lain').append(e); $('lain').append(lb); lain[k]={e,lb,teks}; tulisLabel(k); jadwalPapan(); }
+      $('lain').append(e); $('lain').append(lb); lain[k]={e,lb,teks,o}; tulisLabel(k); jadwalPapan(); }
+    lain[k].o=o;
     const px=batas(o.x), pz=batas(o.z);
     lain[k].e.setAttribute('position',`${px} 0 ${pz}`);
     lain[k].e.setAttribute('rotation',`0 ${(Number(o.ry)||0)*57.3} 0`);
     lain[k].lb.setAttribute('position',`${px} 2.3 ${pz}`); };
   db.ref('posisi').on('child_added',taruh);
   db.ref('posisi').on('child_changed',taruh);
-  db.ref('posisi').on('child_removed',s=>{ const o=lain[s.key]; if(o){ o.e.remove(); o.lb.remove(); delete lain[s.key]; } });
+  db.ref('posisi').on('child_removed',s=>buang(s.key));
 }
 window.addEventListener('error',e=>{ try{ pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); }catch(x){} });
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=2.14"></script>
-<script src="admin.js?v=2.14"></script>
-<script src="akun.js?v=2.14"></script>
+<script src="museum.js?v=2.15"></script>
+<script src="admin.js?v=2.15"></script>
+<script src="akun.js?v=2.15"></script>
 </body>
 </html>
