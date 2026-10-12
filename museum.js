@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.13 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.14 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -765,4 +765,4 @@ function tampilHasil(k,hs){
   $('latihan').scrollTop=0;
 }
 
-try{ $('ver').textContent+=' \u00b7 museum 2.13'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
+try{ $('ver').textContent+=' \u00b7 museum 2.14'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)

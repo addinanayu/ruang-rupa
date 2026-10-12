@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- Ruang Rupa v2.13 -->
+<!-- Ruang Rupa v2.14 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -68,7 +68,7 @@
   <div id="hasil"></div>
 </div>
 <div id="pesan" class="ui" role="status"></div>
-<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.13</div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.14</div>
 
 <a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
@@ -91,7 +91,7 @@ const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.goo
 const FB = { apiKey:'', authDomain:'ruang-rupa.firebaseapp.com', databaseURL:'https://ruang-rupa-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'ruang-rupa' };
 /* ============================================= */
 
-const VERSI = '2.13';   // harus sama dengan nomor di Code.gs (VERSI_)
+const VERSI = '2.14';   // harus sama dengan nomor di Code.gs (VERSI_)
 const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
 let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
 let halaman = 0, zonaAktif = 'A', sudahMasuk = false; const PER = 12;
@@ -126,7 +126,7 @@ async function setelahLogin(t){
   try{
     const r=await gs('getProfile');
     cekVersiServer(r.versi);
-    saya.email=r.email; saya.peran=r.peran; saya.kelas=r.kelas; $('akun').textContent='Masuk sebagai '+r.email.replace('#pw',' (akun sandi)');
+    saya.email=r.email; saya.id=r.id; saya.peran=r.peran; saya.kelas=r.kelas; $('akun').textContent='Masuk sebagai '+r.email.replace('#pw',' (akun sandi)');
     if(false){   /* v2.09: siswa tidak memilih kelas di lobi; kelas diatur guru di Panel Admin */ const ks=await gs('getKelasAktif'), sel=$('kelas'); sel.innerHTML=''; sel.add(new Option('Pilih kelas...',''));
       ks.forEach(k=>sel.add(new Option(k.nama,k.id))); $('kelasBox').style.display='block'; } else $('kelasBox').style.display='none';
     if(r.profile){ $('nama').value=r.profile.nama; saya.avatar=r.profile.avatar; tandaiAvatar(); }
@@ -195,7 +195,7 @@ function bangunGaleri(){ /* Zona D: 12 bingkai per halaman, 2 baris x 6 */
     const judul=`${k.nama}${k.sayaSuka?' (disukai)':''} - ${k.suka} suka`;
     const g=bingkai(d, 22+(i%6)*3.2, 1.7+Math.floor(i/6)*3, -6, 0, k.url, judul, async()=>{
       if(k.milikSaya) return pesan('Ini karyamu sendiri.');
-      try{ const n=await gs('sukaiKarya',k.email);
+      try{ const n=await gs('sukaiKarya',k.id);
         if(n){ k.suka=n; k.sayaSuka=true; bangunGaleri(); pesan('Terima kasih sudah memberi apresiasi.'); }
         else pesan('Kamu sudah menyukai karya ini.');
       }catch(e){ pesan(e.message); } });
@@ -233,8 +233,9 @@ $('buat').onclick = async () => {
    - dengarkan perubahan per-pemain (child_*), bukan seluruh node 'posisi' */
 function mulaiMultiplayer(){
   if(!FB.databaseURL) return pesan('Firebase belum dikonfigurasi: multiplayer nonaktif.',6000);
+  if(!saya.id) return;   // v2.14: kunci Firebase = ID anonim dari server (email tidak lagi dikirim ke klien lain)
   firebase.initializeApp(FB); db=firebase.database();
-  const id=saya.email.replace(/[.#$\[\]@]/g,'_'), ref=db.ref('posisi/'+id);
+  const id=saya.id, ref=db.ref('posisi/'+id);
   ref.onDisconnect().remove();
   const r2=v=>Math.round(v*100)/100;
   let last=null;
@@ -242,28 +243,41 @@ function mulaiMultiplayer(){
     const p=$('rig').object3D.position, ry=$('cam').object3D.rotation.y;
     const cur={x:r2(p.x),y:r2(p.y),z:r2(p.z),ry:r2(ry)};
     if(last && Math.abs(cur.x-last.x)<0.1 && Math.abs(cur.z-last.z)<0.1 && Math.abs(cur.ry-last.ry)<0.1) return;
-    last=cur; ref.set(Object.assign({n:saya.nama,c:saya.avatar,t:Date.now()},cur)); };
+    last=cur; ref.set(Object.assign({n:'',c:saya.avatar,t:Date.now()},cur)); };   // n dikosongkan: nama TIDAK dipercaya dari klien, diambil dari server
   kirim(); setInterval(kirim,2000);
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) ref.remove(); else { last=null; kirim(); } });
 
-  const lain={};
+  /* Pemain lain: badan sederhana + papan nama "Nama + poin" yang selalu menghadap kamera. Nama dan poin dari SERVER (getPapanNama, cache 45 dtk). */
+  const lain={}, papan={}; let tunda=0;
+  const tulisLabel=k=>{ const o=lain[k]; if(!o) return; const p=papan[k];
+    o.teks.setAttribute('value', p ? (p.p>=0 ? String(p.n).slice(0,18)+'\n'+p.p+' poin' : String(p.n).slice(0,18)) : 'Pemain'); };
+  const muatPapan=async()=>{ const ids=Object.keys(lain).slice(0,80); if(!ids.length||!token||document.hidden) return;
+    try{ const r=await gs('getPapanNama',ids); Object.keys(r).forEach(k=>{ papan[k]=r[k]; }); ids.forEach(tulisLabel); }catch(e){} };
+  const jadwalPapan=()=>{ clearTimeout(tunda); tunda=setTimeout(muatPapan,1200); };
+  setInterval(muatPapan,40000);
+  setInterval(()=>{ if(document.hidden) return; const c=$('rig').object3D.position;
+    Object.keys(lain).forEach(k=>{ const lb=lain[k].lb, p=lb.object3D.position; lb.object3D.rotation.y=Math.atan2(c.x-p.x,c.z-p.z); }); },120);
+  const batas=v=>Math.max(-60,Math.min(60,Number(v)||0));
   const taruh=s=>{ const k=s.key; if(k===id) return; const o=s.val(); if(!o) return;
     if(!lain[k]){ const e=document.createElement('a-entity'), w=/^#[0-9a-f]{6}$/i.test(o.c)?o.c:'#888888';
-      const t=(tag,at)=>{ const x=document.createElement(tag); for(const q in at) x.setAttribute(q,at[q]); e.append(x); };
-      t('a-sphere',{radius:0.3,position:'0 1.5 0',color:w}); t('a-cylinder',{radius:0.25,height:1,position:'0 0.7 0',color:w});
-      t('a-text',{value:String(o.n).slice(0,40),align:'center',position:'0 2 0',width:3,side:'double'});
-      $('lain').append(e); lain[k]=e; }
-    lain[k].setAttribute('position',`${Number(o.x)||0} 0 ${Number(o.z)||0}`);
-    lain[k].setAttribute('rotation',`0 ${(Number(o.ry)||0)*57.3} 0`); };
+      const t=(induk,tag,at)=>{ const q=document.createElement(tag); for(const n in at) q.setAttribute(n,at[n]); induk.append(q); return q; };
+      t(e,'a-sphere',{radius:0.3,position:'0 1.5 0',color:w}); t(e,'a-cylinder',{radius:0.25,height:1,position:'0 0.7 0',color:w});
+      const lb=document.createElement('a-entity'); t(lb,'a-plane',{width:1.9,height:0.62,color:'#1d1812',opacity:0.7,transparent:true});
+      const teks=t(lb,'a-text',{value:'Pemain',align:'center',width:2.6,position:'0 0 0.01',color:'#ffffff'});
+      $('lain').append(e); $('lain').append(lb); lain[k]={e,lb,teks}; tulisLabel(k); jadwalPapan(); }
+    const px=batas(o.x), pz=batas(o.z);
+    lain[k].e.setAttribute('position',`${px} 0 ${pz}`);
+    lain[k].e.setAttribute('rotation',`0 ${(Number(o.ry)||0)*57.3} 0`);
+    lain[k].lb.setAttribute('position',`${px} 2.3 ${pz}`); };
   db.ref('posisi').on('child_added',taruh);
   db.ref('posisi').on('child_changed',taruh);
-  db.ref('posisi').on('child_removed',s=>{ const e=lain[s.key]; if(e){ e.remove(); delete lain[s.key]; } });
+  db.ref('posisi').on('child_removed',s=>{ const o=lain[s.key]; if(o){ o.e.remove(); o.lb.remove(); delete lain[s.key]; } });
 }
 window.addEventListener('error',e=>{ try{ pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); }catch(x){} });
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=2.13"></script>
-<script src="admin.js?v=2.13"></script>
-<script src="akun.js?v=2.13"></script>
+<script src="museum.js?v=2.14"></script>
+<script src="admin.js?v=2.14"></script>
+<script src="akun.js?v=2.14"></script>
 </body>
 </html>

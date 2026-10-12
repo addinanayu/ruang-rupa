@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.13 - Akun sandi / buku tamu. Dimuat setelah admin.js. Menambah pilihan "masuk dengan email + sandi" dan formulir pendaftaran. */
+/* Ruang Rupa v2.14 - Akun sandi / buku tamu. Dimuat setelah admin.js. Menambah pilihan "masuk dengan email + sandi" dan formulir pendaftaran. */
 document.head.insertAdjacentHTML('beforeend','<style>#daftar{inset:0;margin:auto;width:min(420px,94vw);max-height:92vh;overflow:auto;height:fit-content;display:none}#daftar label{display:block;margin:8px 0 2px;font-weight:600}#daftar input,#daftar select,#sandiBox input{width:100%;padding:7px;box-sizing:border-box}#sandiBox{margin-top:14px;border-top:1px solid #ccc;padding-top:10px}#sandiBox p{margin:0 0 6px;font-size:13px}</style>');
 $('login').insertAdjacentHTML('beforeend',`<div id="sandiBox"><p>Atau masuk dengan email dan kata sandi:</p>
   <input id="lgEmail" type="email" placeholder="email" autocomplete="username" aria-label="Email"><div style="height:6px"></div>
@@ -45,4 +45,4 @@ $('dKirim').onclick=async()=>{
 };
 const keLoginAsli2=keLogin; keLogin=function(i){ $('daftar').style.display='none'; keLoginAsli2(i); };
 
-try{ document.getElementById('ver').textContent+=' \u00b7 akun 2.13'; }catch(e){}
+try{ document.getElementById('ver').textContent+=' \u00b7 akun 2.14'; }catch(e){}

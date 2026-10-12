@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.13 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Rekap, Pengguna, Log. Dimuat setelah museum.js.
+/* Ruang Rupa v2.14 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Moderasi, Rekap, Pengguna, Log. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
@@ -21,12 +21,12 @@ async function bukaAdmin(){
   try{ kelasData=await gs('adminDaftarKelas'); }catch(e){ tutupAdmin(); return pesan(e.message); }
   pilihTab(kelasData.length?'kelas':'mulai');
 }
-const TABS=[['mulai','Langkah awal',2],['lukisan','Lukisan',2],['kelas','Kelas',2],['soal','Soal',2],['rekap','Rekap',2],['pengguna','Pengguna',2],['log','Log',3]];
+const TABS=[['mulai','Langkah awal',2],['lukisan','Lukisan',2],['kelas','Kelas',2],['soal','Soal',2],['moderasi','Moderasi',2],['rekap','Rekap',2],['pengguna','Pengguna',2],['log','Log',3]];
 function pilihTab(t){
   tabAdm=t; const ada=TABS.filter(x=>(RANK[saya.peran]||0)>=x[2]);
   $('admTab').replaceChildren(...ada.map(([k,n])=>{ const b=h('button',{className:'tab',textContent:n,onclick:()=>pilihTab(k)});
     b.setAttribute('role','tab'); b.setAttribute('aria-selected',String(k===t)); return b; }));
-  ({mulai:renderMulai,lukisan:renderLukisan,kelas:renderKelas,soal:renderSoal,rekap:renderRekap,pengguna:renderPengguna,log:renderLog})[t]();
+  ({mulai:renderMulai,lukisan:renderLukisan,kelas:renderKelas,soal:renderSoal,moderasi:renderModerasi,rekap:renderRekap,pengguna:renderPengguna,log:renderLog})[t]();
 }
 async function renderMulai(){
   let l=[]; try{ l=await gs('adminDaftarLukisan'); }catch(e){}
@@ -204,4 +204,29 @@ async function renderRekap(){
     h('h4',{textContent:'Per siswa (urut poin tertinggi)'}),tSiswa,h('h4',{textContent:'Per kelas'}),tKelas,h('h4',{textContent:'Per lukisan'}),tLuk);
 }
 
-try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.13'; }catch(e){}
+/* ===== v2.14: tab Moderasi karya Galeri Bersama (setujui / tolak / sembunyikan). Server memeriksa peran (wajibPeran_). ===== */
+let modFilter='menunggu';
+async function renderModerasi(){
+  const isi=$('admIsi'); isi.textContent='Memuat...';
+  const sel=h('select',{},opt('menunggu','Menunggu persetujuan'),opt('disetujui','Sudah tampil'),opt('ditolak','Ditolak / disembunyikan'));
+  sel.value=modFilter;
+  const area=h('div',{});
+  const muat=async()=>{ modFilter=sel.value; area.textContent='Memuat...';
+    let l; try{ l=await gs('adminDaftarKaryaMenunggu',sel.value); }catch(e){ area.textContent=e.message; return; }
+    if(!l.length){ area.textContent='Tidak ada karya pada daftar ini.'; return; }
+    area.replaceChildren(...l.map(k=>{
+      const act=(teks,a,alt)=>h('button',{className:alt?'alt':'',textContent:teks,onclick:async ev=>{ ev.target.disabled=true;
+        try{ await gs('adminModerasi',k.email,a); pesan('Tersimpan.'); muat(); }catch(e){ pesan(e.message,6000); ev.target.disabled=false; } }});
+      const aksi=k.status==='menunggu'?[act('Setujui','setujui'),act('Tolak','tolak',true)]:k.status==='disetujui'?[act('Sembunyikan','sembunyikan',true)]:[act('Setujui lagi','setujui')];
+      const img=h('img',{alt:'Karya '+k.nama,style:'max-width:180px;max-height:180px;border-radius:4px'});
+      if(/^https:\/\/lh3\.googleusercontent\.com\/d\/[\w-]+$/.test(k.url)) img.src=k.url;
+      return h('div',{className:'bar',style:'align-items:flex-start;border-bottom:1px solid #ddd;padding-bottom:8px'},img,
+        h('div',{style:'flex:1;min-width:200px'},h('b',{textContent:k.nama+' ('+k.email+')'}),h('div',{textContent:'Tema: '+k.prompt,style:'font-size:13px'}),
+          h('div',{textContent:k.suka+' suka',style:'font-size:13px'}),h('div',{className:'bar'},...aksi)));
+    })); };
+  sel.onchange=muat;
+  isi.replaceChildren(h('div',{className:'bar'},sel,h('button',{className:'alt',textContent:'Muat ulang',onclick:muat})),area);
+  muat();
+}
+
+try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.14'; }catch(e){}
