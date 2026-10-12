@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- Ruang Rupa v2.15 -->
+<!-- Ruang Rupa v2.16 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -68,7 +68,7 @@
   <div id="hasil"></div>
 </div>
 <div id="pesan" class="ui" role="status"></div>
-<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.15</div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.16</div>
 
 <a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
@@ -91,7 +91,7 @@ const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.goo
 const FB = { apiKey:'', authDomain:'ruang-rupa.firebaseapp.com', databaseURL:'https://ruang-rupa-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'ruang-rupa' };
 /* ============================================= */
 
-const VERSI = '2.15';   // harus sama dengan nomor di Code.gs (VERSI_)
+const VERSI = '2.16';   // harus sama dengan nomor di Code.gs (VERSI_)
 const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
 let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
 let halaman = 0, zonaAktif = 'A', sudahMasuk = false; const PER = 12;
@@ -177,32 +177,11 @@ $('masuk').onclick = async () => {
 
 /* Zona */
 const POS = { A:[0,0,6], C:[-30,0,6], D:[30,0,6] };
-function pindah(z){ zonaAktif=z; $('pager').style.display=z==='D'?'inline-flex':'none'; $('rig').setAttribute('position', POS[z].join(' ')); $('studio').style.display = z==='C'?'block':'none'; }
+function pindah(z){ zonaAktif=z; $('rig').setAttribute('position', POS[z].join(' ')); $('studio').style.display = z==='C'?'block':'none'; }
 document.querySelectorAll('[data-zona]').forEach(b=>b.onclick=()=>pindah(b.dataset.zona));
 
-function bingkai(parent, x, y, z, rotY, url, judul, onClick){
-  const g=document.createElement('a-entity'); g.setAttribute('position',`${x} ${y} ${z}`); g.setAttribute('rotation',`0 ${rotY} 0`);
-  const buat=(tag,at)=>{ const e=document.createElement(tag); for(const k in at) e.setAttribute(k,at[k]); g.append(e); return e; };
-  buat('a-plane',{width:2.2,height:2.2,color:'#3a2f26'});
-  if(url){ const im=buat('a-image',{class:'klik',position:'0 0 0.02',width:2,height:2,src:url}); if(onClick) im.addEventListener('click',onClick); }
-  buat('a-text',{value:judul||'Bingkai kosong',align:'center',width:3,position:'0 -1.4 0.02',color:'#222'});
-  parent.append(g); return g;
-}
-function bangunGaleri(){ /* Zona D: 12 bingkai per halaman, 2 baris x 6 */
-  const d=$('dunia'); d.querySelectorAll('.zd').forEach(e=>e.remove());
-  const maks=Math.max(0,Math.ceil(galeri.length/PER)-1); halaman=Math.min(halaman,maks);
-  galeri.slice(halaman*PER,(halaman+1)*PER).forEach((k,i)=>{
-    const judul=`${k.nama}${k.sayaSuka?' (disukai)':''} - ${k.suka} suka`;
-    const g=bingkai(d, 22+(i%6)*3.2, 1.7+Math.floor(i/6)*3, -6, 0, k.url, judul, async()=>{
-      if(k.milikSaya) return pesan('Ini karyamu sendiri.');
-      try{ const n=await gs('sukaiKarya',k.id);
-        if(n){ k.suka=n; k.sayaSuka=true; bangunGaleri(); pesan('Terima kasih sudah memberi apresiasi.'); }
-        else pesan('Kamu sudah menyukai karya ini.');
-      }catch(e){ pesan(e.message); } });
-    g.classList.add('zd');
-  });
-  $('hal').textContent=`${halaman+1}/${maks+1}`;
-}
+/* v2.16: Galeri Bersama lama (zona di luar gedung) dihapus. Karya siswa tampil di Sayap Karya Siswa (museum.js: isiSayap) */
+function bangunGaleri(){ if(typeof isiSayap==='function') isiSayap(); }
 async function muatGaleri(){ galeri = await gs('getGallery'); }
 setInterval(async()=>{ if(zonaAktif!=='D'||document.hidden||!token) return; try{ await muatGaleri(); bangunGaleri(); }catch(e){} }, 45000);
 $('prev').onclick=()=>{ if(halaman>0){ halaman--; bangunGaleri(); } };
@@ -288,8 +267,8 @@ function mulaiMultiplayer(){
 window.addEventListener('error',e=>{ try{ pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); }catch(x){} });
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=2.15"></script>
-<script src="admin.js?v=2.15"></script>
-<script src="akun.js?v=2.15"></script>
+<script src="museum.js?v=2.16"></script>
+<script src="admin.js?v=2.16"></script>
+<script src="akun.js?v=2.16"></script>
 </body>
 </html>
