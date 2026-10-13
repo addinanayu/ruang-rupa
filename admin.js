@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.16 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Moderasi, Rekap, Pengguna, Log. Dimuat setelah museum.js.
+/* Ruang Rupa v2.20 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Moderasi, Rekap, Pengguna, Log. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
@@ -40,16 +40,16 @@ async function renderMulai(){
 function renderKelas(){
   let idEdit='';
   const nama=h('input',{placeholder:'mis. 7A atau 8 Mawar',maxLength:30}), urut=h('input',{type:'number',style:'width:70px',value:kelasData.length+1}),
-        st=h('select',{},opt('aktif','aktif'),opt('nonaktif','nonaktif'));
+        st=h('select',{},opt('aktif','aktif'),opt('nonaktif','nonaktif')), kode=h('input',{placeholder:'kode kelas (4-20 huruf/angka)',maxLength:20,style:'width:190px'});
   const simpan=h('button',{textContent:'Simpan kelas',onclick:async()=>{
-    try{ await gs('adminSimpanKelas',{id:idEdit,nama:nama.value,urutan:Number(urut.value)||0,status:st.value}); kelasData=await gs('adminDaftarKelas'); renderKelas(); pesan('Kelas disimpan.'); }
+    try{ await gs('adminSimpanKelas',{id:idEdit,nama:nama.value,urutan:Number(urut.value)||0,status:st.value,kode:kode.value}); kelasData=await gs('adminDaftarKelas'); renderKelas(); pesan('Kelas disimpan.'); }
     catch(e){ pesan(e.message); } }});
-  const baru=h('button',{className:'alt',textContent:'Tambah Kelas',onclick:()=>{ idEdit=''; nama.value=''; urut.value=kelasData.length+1; st.value='aktif'; nama.focus(); }});
-  const baris=kelasData.map(k=>h('tr',{},h('td',{textContent:k.nama}),h('td',{textContent:k.urutan}),h('td',{textContent:k.status}),h('td',{textContent:k.jumlah}),
-    h('td',{},h('button',{className:'alt',textContent:'Ubah',onclick:()=>{ idEdit=k.id; nama.value=k.nama; urut.value=k.urutan; st.value=k.status; nama.focus(); }}))));
-  $('admIsi').replaceChildren(h('div',{className:'bar'},baru),h('div',{className:'bar'},nama,urut,st,simpan),
-    h('p',{style:'font-size:13px;color:#555',textContent:'Kelas tidak dihapus, hanya dinonaktifkan. Mengganti nama aman karena data memakai ID tetap.'}),
-    h('div',{className:'tbl'},h('table',{},h('tr',{},...['Nama','Urutan','Status','Siswa',''].map(x=>h('th',{textContent:x}))),...baris)));
+  const baru=h('button',{className:'alt',textContent:'Tambah Kelas',onclick:()=>{ idEdit=''; nama.value=''; kode.value=''; urut.value=kelasData.length+1; st.value='aktif'; nama.focus(); }});
+  const baris=kelasData.map(k=>h('tr',{},h('td',{textContent:k.nama}),h('td',{textContent:k.urutan}),h('td',{textContent:k.status}),h('td',{textContent:k.kode||'-'}),h('td',{textContent:k.jumlah}),
+    h('td',{},h('button',{className:'alt',textContent:'Ubah',onclick:()=>{ idEdit=k.id; nama.value=k.nama; kode.value=k.kode||''; urut.value=k.urutan; st.value=k.status; nama.focus(); }}))));
+  $('admIsi').replaceChildren(h('div',{className:'bar'},baru),h('div',{className:'bar'},nama,urut,st,kode,simpan),
+    h('p',{style:'font-size:13px;color:#555',textContent:'Kelas tidak dihapus, hanya dinonaktifkan. Mengganti nama aman karena data memakai ID tetap. Bagikan KODE kelas kepada siswa untuk mendaftar; kosongkan kode untuk menutup pendaftaran ke kelas itu.'}),
+    h('div',{className:'tbl'},h('table',{},h('tr',{},...['Nama','Urutan','Status','Kode','Siswa',''].map(x=>h('th',{textContent:x}))),...baris)));
 }
 async function renderPengguna(){
   const isi=$('admIsi'); isi.textContent='Memuat...';
@@ -243,4 +243,4 @@ async function renderModerasi(){
   muat();
 }
 
-try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.16'; }catch(e){}
+try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.20'; }catch(e){}
