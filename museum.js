@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.23 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.24 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -136,10 +136,24 @@ setInterval(()=>{ if(zonaAktif!=='A'||!token) return; const p=$('rig').object3D.
   const d = p.z<12 && p.z>-1.5 && Math.abs(p.x)<4; if(d!==dekatPintu){ dekatPintu=d; bukaPintu(d||p.z<=0); } }, 250);
 
 /* ---------- Ruang Maestro ---------- */
+/* v2.24: tekstur plakat bersudut membulat (tepi emas + dasar cokelat tua), digambar di canvas, di-cache per ukuran */
+const _texPlk={};
+function texPlakat(w,h,r){
+  const key=w.toFixed(2)+'x'+h.toFixed(2)+'r'+r; if(_texPlk[key]) return _texPlk[key];
+  const pm=260, cw=Math.round(w*pm), ch=Math.round(h*pm), c=document.createElement('canvas'); c.width=cw; c.height=ch; const g=c.getContext('2d');
+  const rr=(x,y,ww,hh,rad)=>{ g.beginPath(); g.moveTo(x+rad,y); g.arcTo(x+ww,y,x+ww,y+hh,rad); g.arcTo(x+ww,y+hh,x,y+hh,rad); g.arcTo(x,y+hh,x,y,rad); g.arcTo(x,y,x+ww,y,rad); g.closePath(); };
+  const R=r*pm, bt=0.025*pm;
+  rr(0,0,cw,ch,R); g.fillStyle='#c9a24a'; g.fill();
+  rr(bt,bt,cw-2*bt,ch-2*bt,Math.max(2,R-bt)); g.fillStyle='#2b1d12'; g.fill();
+  rr(bt*2.4,bt*2.4,cw-4.8*bt,ch-4.8*bt,Math.max(2,R-bt*2.4)); g.strokeStyle='rgba(201,162,74,0.5)'; g.lineWidth=1.5; g.stroke();
+  return _texPlk[key]=c.toDataURL();
+}
+function plakatBulat(p){ return el(p,'a-plane',{material:{transparent:true,alphaTest:0.02,roughness:0.6}}); }
+function aturPlakat(e,w,h,r,pos){ e.setAttribute('width',w); e.setAttribute('height',h); e.setAttribute('position',pos); e.setAttribute('material',{src:texPlakat(w,h,r),transparent:true,alphaTest:0.02,roughness:0.6}); }
 function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
   const kosong = !k, w = k && WARNA[k.aliran] || '#9a9082';
-  // v2.23: desain mengikuti contoh Gemini: bingkai kayu walnut + lis emas tipis, papan aliran perunggu di atas, plakat judul/tahun/pelukis di bawah, lampu rel menyorot LUKISAN. Pusat y 1,75; kanvas maks 2,0 x 1,5.
-  const f = el(g,'a-entity',{position:`${x} 1.75 ${z}`,rotation:`0 ${ry} 0`});
+  // v2.24: pusat y 1,85; kanvas maks 2,0 x 1,5; plakat aliran dan info bersudut membulat, huruf diperbesar
+  const f = el(g,'a-entity',{position:`${x} 1.85 ${z}`,rotation:`0 ${ry} 0`});
   const bingkai = el(f,'a-box',{depth:0.14,color:'#5a3a22'});
   const lekuk = el(f,'a-plane',{position:'0 0 0.076',color:'#33200f'});
   const garis = el(f,'a-plane',{position:'0 0 0.082',color:'#c9a24a'});
@@ -149,25 +163,23 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
   let im=null;
   if(k && k.gambar){ im=el(f,'a-image',{position:'0 0 0.1',src:k.gambar,class:'klik'});
     im.addEventListener('click',()=>{ if(klikSah()) buka(i); }); im.addEventListener('error',()=>im.remove()); }
-  // papan aliran (perunggu: tepi emas + dasar cokelat tua + huruf emas)
+  // papan aliran
   const adaAliran = !kosong && !!k.aliran;
-  const pAlT = adaAliran ? el(f,'a-box',{width:1.84,height:0.34,depth:0.04,color:'#c9a24a'}) : null;
-  const pAl = adaAliran ? el(f,'a-plane',{width:1.76,height:0.26,color:'#2e2014'}) : null;
-  const tAl = adaAliran ? teks(f,String(k.aliran).toUpperCase(),0,0,0.07,3.2,'#e9c46a') : null;
-  // lampu sorot: lengan dari dinding, kepala lampu miring ke arah lukisan (bukan ke pengunjung), lensa menyala, kerucut cahaya tipis
+  const pAl = adaAliran ? plakatBulat(f) : null;
+  const tAl = adaAliran ? teks(f,String(k.aliran).toUpperCase(),0,0,0.07,4.2,'#e9c46a') : null;
+  // lampu sorot: kepala lampu miring ke lukisan, lensa menyala, kerucut cahaya tipis
   const lengan = el(f,'a-box',{width:0.05,height:0.05,depth:0.56,color:'#2b2118'});
   const kepala = el(f,'a-entity',{});
   el(kepala,'a-cylinder',{radius:0.07,height:0.2,color:'#2b2118'});
   el(kepala,'a-cylinder',{radius:0.055,height:0.012,position:'0 -0.103 0',material:'color:#fff1c8;emissive:#ffe9a8;emissiveIntensity:1;shader:flat'});
   const sinar = el(f,'a-cone',{'radius-top':0.03,'open-ended':true,material:'shader:flat;color:#fff0c8;opacity:0.07;transparent:true;depthWrite:false;side:double'});
   if(kosong) el(f,'a-text',{value:'Segera hadir',align:'center',width:1.8,wrapCount:14,position:'0 0 0.12',color:'#6b6458'});
-  // plakat info di bawah bingkai: judul (emas, besar) + "tahun | pelukis"
-  const judul = kosong ? 'Segera hadir' : String(k.judul).slice(0,44), panjang = judul.length>22;
-  const baris2 = kosong ? '' : [k.tahun,k.pelukis].filter(Boolean).join(' | ').slice(0,36);
-  const plkT = el(f,'a-box',{height:0.6,depth:0.04,color:'#c9a24a'});
-  const plk = el(f,'a-plane',{height:0.52,color:'#2b1d12'});
-  const tJd = el(f,'a-text',{value:judul,align:'center',font:'exo2bold',wrapCount:panjang?34:22,color:'#e9c46a'});
-  const tB2 = baris2 ? el(f,'a-text',{value:baris2,align:'center',wrapCount:34,color:'#f3e6c8'}) : null;
+  // plakat info: judul (emas, besar) + "tahun | pelukis"
+  const judul = kosong ? 'Segera hadir' : String(k.judul).slice(0,44), panjang = judul.length>16;
+  const baris2 = kosong ? '' : [k.tahun,k.pelukis].filter(Boolean).join(' | ').slice(0,34);
+  const plk = plakatBulat(f);
+  const tJd = el(f,'a-text',{value:judul,align:'center',font:'exo2bold',wrapCount:panjang?28:18,color:'#e9c46a'});
+  const tB2 = baris2 ? el(f,'a-text',{value:baris2,align:'center',wrapCount:36,color:'#f3e6c8'}) : null;
   const td=el(f,'a-circle',{id:'tanda'+i,radius:0.2,color:'#3f7d4f',visible:false});   // tanda selesai (Tahap 3): hijau 'OK' = sudah dikerjakan, emas '100' = semua benar
   el(td,'a-text',{value:'OK',align:'center',width:1.4,position:'0 0 0.01',color:'#ffffff'});
   const atur = (cw,ch)=>{
@@ -175,19 +187,19 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
     set(bingkai,'width',W); set(bingkai,'height',H);
     [[lekuk,0.30],[garis,0.14],[celah,0.06]].forEach(([e,d])=>{ set(e,'width',cw+d); set(e,'height',ch+d); });
     set(kanvas,'width',cw); set(kanvas,'height',ch); if(im){ set(im,'width',cw); set(im,'height',ch); }
-    const yA=H/2+0.24; if(pAl){ [pAlT,pAl].forEach(e=>set(e,'position',`0 ${yA} ${e===pAlT?0.04:0.062}`)); set(tAl,'position',`0 ${yA} 0.07`); }
-    const yL=H/2+0.62, th=Math.atan2(0.42,yL), dg=th*180/Math.PI;
+    const yA=H/2+0.28; if(pAl){ aturPlakat(pAl,2.1,0.4,0.1,`0 ${yA} 0.05`); set(tAl,'position',`0 ${yA} 0.07`); }
+    const yL=H/2+0.72, th=Math.atan2(0.42,yL), dg=th*180/Math.PI;
     set(lengan,'position',`0 ${yL} 0.22`); set(kepala,'position',`0 ${yL-0.05} 0.5`); set(kepala,'rotation',`${dg} 0 0`);
-    const ay=yL-0.14, az=0.47, d=Math.hypot(ay,az-0.1);   // ujung kerucut di lensa, alas di lukisan
+    const ay=yL-0.14, az=0.47, d=Math.hypot(ay,az-0.1);
     set(sinar,'height',d); set(sinar,'radius-bottom',Math.min(W,2.4)/2); set(sinar,'position',`0 ${ay/2} ${(az+0.1)/2}`); set(sinar,'rotation',`${Math.atan2(az-0.1,ay)*180/Math.PI} 0 0`);
-    const Wp=Math.max(1.7,Math.min(2.2,W*0.9)), tw=Wp-0.15, yP=-(H/2+0.33);
-    [plkT,plk].forEach(e=>{ set(e,'width',e===plkT?Wp+0.08:Wp); set(e,'position',`0 ${yP} ${e===plkT?0.04:0.062}`); });
-    set(tJd,'width',tw); set(tJd,'position',`0 ${yP+(baris2?0.1:0)} 0.07`);
-    if(tB2){ set(tB2,'width',tw*0.9); set(tB2,'position',`0 ${yP-0.15} 0.07`); }
+    const Wp=Math.round(Math.max(2.2,Math.min(2.6,W*1.05))*10)/10, tw=Wp-0.2, yP=-(H/2+0.43);
+    aturPlakat(plk,Wp,0.74,0.1,`0 ${yP} 0.05`);
+    set(tJd,'width',tw); set(tJd,'position',`0 ${yP+(baris2?0.13:0)} 0.07`);
+    if(tB2){ set(tB2,'width',tw); set(tB2,'position',`0 ${yP-0.2} 0.07`); }
     set(td,'position',`${W/2-0.2} ${H/2-0.2} 0.16`);
   };
   atur(2.0,1.5);
-  if(im) ukuranGambar(k.gambar).then(d=>{ if(!d||!im.parentNode) return; const [a,b]=fitRasio(d[0],d[1],2.0,1.5); atur(a,b); });   // bingkai ikut rasio asli lukisan
+  if(im) ukuranGambar(k.gambar).then(d=>{ if(!d||!im.parentNode) return; const [a,b]=fitRasio(d[0],d[1],2.0,1.5); atur(a,b); });
   if(k) kanvas.addEventListener('click',()=>{ if(klikSah()) buka(i); });
   daftarBingkai[i] = { x, z, ry, yaw, k, sx, sz };
 }
@@ -1098,4 +1110,4 @@ function gambarDenah(pos){
   return c.toDataURL('image/png');
 }
 
-try{ $('ver').textContent+=' \u00b7 museum 2.23'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
+try{ $('ver').textContent+=' \u00b7 museum 2.24'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
