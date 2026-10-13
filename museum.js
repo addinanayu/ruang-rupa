@@ -280,7 +280,7 @@ function spanduk(g){
   [[0,0.96,4.8,0.07],[0,-0.96,4.8,0.07],[-2.37,0,0.07,2.0],[2.37,0,0.07,2.0]].forEach(([a,b,ww,hh])=>el(s,'a-plane',{position:`${a} ${b} 0.01`,width:ww,height:hh,color:'#b8923a'}));
   [[0,0.84,4.5,0.025],[0,-0.84,4.5,0.025],[-2.25,0,0.025,1.7],[2.25,0,0.025,1.7]].forEach(([a,b,ww,hh])=>el(s,'a-plane',{position:`${a} ${b} 0.015`,width:ww,height:hh,color:'#d4b05a'}));
   [[-2.03,0.64],[2.03,0.64],[-2.03,-0.64],[2.03,-0.64]].forEach(([a,b])=>el(s,'a-sphere',{position:`${a} ${b} 0.03`,radius:0.065,color:'#d4b05a','segments-width':10,'segments-height':8}));
-  teksLapis(s,'SELAMAT DATANG',0,0.3,0.03,4.6,19,'#e3c06f','#241908');
+  teksLapis(s,'SELAMAT DATANG',0,0.3,0.03,10,21,'#e3c06f','#241908');
   [-1.05,1.05].forEach(x0=>el(s,'a-plane',{position:`${x0} -0.2 0.02`,width:1.6,height:0.03,color:'#d4b05a'}));
   el(s,'a-box',{position:'0 -0.2 0.03',width:0.17,height:0.17,depth:0.02,rotation:'0 0 45',color:'#d4b05a'});
   el(s,'a-text',{value:'Ayo jelajahi karya seni bersama-sama',align:'center',width:4.4,wrapCount:38,position:'0 -0.58 0.03',color:'#e3c06f'});
@@ -907,7 +907,7 @@ function bangunSayap(g){
   // bukaan di dinding timur aula: kusen + tulisan di sisi aula
   kotak(g,10.1,2,-4.45,0.5,4,0.12,gelap); kotak(g,10.1,2,-7.55,0.5,4,0.12,gelap);
   kotak(g,9.68,4.75,-6,0.04,0.9,2.2,'#2b2118');   // v2.17 T04: latar gelap di sisi aula (muka depan x 9,66)
-  el(g,'a-text',{value:'GALERI\nKARYA SISWA',align:'center',font:'exo2bold',width:2.0,wrapCount:16,position:'9.64 4.75 -6',rotation:'0 -90 0',color:'#f3e6c8',side:'double'});
+  el(g,'a-text',{value:'GALERI\nKARYA SISWA',align:'center',font:'exo2bold',width:5.0,wrapCount:17,position:'9.64 4.75 -6',rotation:'0 -90 0',color:'#f3e6c8',side:'double'});
   // slot dinding (12): selatan menghadap utara, utara menghadap selatan; dahulukan dinding
   const S=[]; for(let n=0;n<6;n++){ const x=12.7+2.3*n; S.push({x,y:1.75,z:-0.33,ry:180,mw:1.5,mh:1.1,jarak:2.4}); S.push({x,y:1.75,z:-11.67,ry:0,mw:1.5,mh:1.1,jarak:2.4}); }
   // panel jenis A: dua baris x tiga panel, zig-zag 1,5 m
@@ -920,10 +920,6 @@ function bangunSayap(g){
   }); });
   baris.forEach(([cz,xs])=>[[0.065,0],[-0.065,180]].forEach(([dz,ry])=>xs.forEach(cx=>[-0.7,0.7].forEach(dx=>sisi.push({x:cx+dx,y:1.7,z:cz+dz,ry,mw:1.1,mh:1.1,jarak:2.0})))));
   // v2.20: panel judul berdiri dihapus (menyempitkan jalan). Judul kini papan di dinding timur (terlihat lurus dari pintu); satu lukisan di dinding barat bekas tempat panel.
-  kotak(g,28.25,3.0,-6,0.1,1.7,5.6,'#2b2118'); kotak(g,28.2,3.88,-6,0.06,0.06,5.6,'#c9a227'); kotak(g,28.2,2.12,-6,0.06,0.06,5.6,'#c9a227');
-  el(g,'a-text',{value:'GALERI KARYA SISWA',align:'center',font:'exo2bold',width:4.8,wrapCount:18,position:'28.18 3.42 -6',rotation:'0 -90 0',color:'#fff3c4',side:'double'});
-  const j=el(g,'a-text',{value:'',align:'center',width:3.4,wrapCount:30,position:'28.18 2.95 -6',rotation:'0 -90 0',color:'#e8c85a',side:'double'}); judulSayap.push(j);
-  el(g,'a-text',{value:'Dibuat dengan bantuan AI',align:'center',width:2.6,wrapCount:30,position:'28.18 2.5 -6',rotation:'0 -90 0',color:'#d8cfb8',side:'double'});
   sisi.push({x:10.33,y:1.75,z:-2.3,ry:90,mw:1.5,mh:1.1,jarak:2.4});
   sisi.push({x:10.33,y:1.75,z:-9.6,ry:90,mw:1.5,mh:1.1,jarak:2.4});   // v2.20: satu lukisan lagi di sisi utara dinding barat (kanan pintu), simetris
   [[-9.6,4.2,8],[-2.4,4.2,8]].forEach(([z,d,h])=>kotak(g,10.31,h/2,z,0.02,h,d,PUTIH));   // v2.20: sisi galeri dinding barat dilapis putih (sama dengan dinding galeri lain); celah pintu tetap terbuka
@@ -1013,9 +1009,9 @@ function bangunBooth(g){
     el(b,'a-text',{value:nm,align:'center',width:0.46,wrapCount:8,position:'0 0 0.03',color:'#ffffff'});
     bx.addEventListener('click',()=>{ if(!klikSah()) return; const sel=$('aliran'); if(sel){ sel.value=nm; pesan('Aliran dipilih: '+nm+'.',2500); } }); });
   // balok judul sisi timur (dua tulisan: ke aula dan ke dalam booth) + dua tiang
-  kotak(g,-3.6,3.75,-6.4,0.3,1.1,6.0,TEAL); [-9.2,-3.6].forEach(z=>kotak(g,-3.6,1.6,z,0.12,3.2,0.12,PUTIH)); SOLID.push([-4.1,-3.1,-9.65,-8.75],[-4.1,-3.1,-4.05,-3.15]);
-  [[-3.44,90],[-3.76,-90]].forEach(([x,ry])=>{ el(g,'a-text',{value:'STUDIO AI',align:'center',font:'exo2bold',width:5.0,wrapCount:13,position:`${x} 3.95 -6.4`,rotation:`0 ${ry} 0`,color:'#f3e6c8',side:'double'});
-    el(g,'a-text',{value:'Ciptakan karyamu',align:'center',width:3.0,wrapCount:18,position:`${x} 3.43 -6.4`,rotation:`0 ${ry} 0`,color:EMAS,side:'double'}); });
+  kotak(g,-3.6,3.95,-6.4,0.3,1.5,6.0,TEAL); [-9.2,-3.6].forEach(z=>kotak(g,-3.6,1.6,z,0.12,3.2,0.12,PUTIH)); SOLID.push([-4.1,-3.1,-9.65,-8.75],[-4.1,-3.1,-4.05,-3.15]);
+  [[-3.44,90],[-3.76,-90]].forEach(([x,ry])=>{ el(g,'a-text',{value:'STUDIO AI',align:'center',font:'exo2bold',width:11,wrapCount:20,position:`${x} 4.2 -6.4`,rotation:`0 ${ry} 0`,color:'#f3e6c8',side:'double'});
+    el(g,'a-text',{value:'Ciptakan karyamu',align:'center',width:4.4,wrapCount:16,position:`${x} 3.8 -6.4`,rotation:`0 ${ry} 0`,color:EMAS,side:'double'}); });
   // totem sudut tenggara (v2.22: tulisan vertikal dihapus)
   kotak(g,-3.85,1.7,-3.75,0.4,3.4,0.3,TEAL); SOLID.push([-4.45,-3.25,-4.25,-3.15]);
   // meja layanan + papan langkah
