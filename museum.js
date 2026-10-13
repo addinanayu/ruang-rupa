@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.22 (optimasi kecepatan, logika sama; fitur sampai v2.25 tetap) - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.22 (optimasi kecepatan, plakat karya siswa gaya museum; fitur sampai v2.25 tetap) - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -8,6 +8,7 @@ POS.A = [0, -0.47, 16]; POS.C = [-4.6, 0, -5.6]; POS.D = [12, 0, -6];   // v2.16
 
 /* PERBAIKAN: status tombol keyboard harus dideklarasikan SEBELUM cekTabrak berjalan (menghindari galat 'tPutar before initialization') */
 const tombolPutar={}; let tPutar=performance.now(); const vKunci={x:0,z:0};   // v2.20: kecepatan gerak halus; harus di atas karena cekTabrak langsung memanggil gerakKunci
+let joy={x:0,y:0}, tJoy=performance.now(), joyId=null;   // v2.22b: harus di atas karena cekTabrak langsung memanggil gerakJoy()
 
 /* PERBAIKAN 2: look-controls milik A-Frame baru punya yawObject/pitchObject setelah scene selesai dimuat.
    Semua akses ke kontrol pandang harus lewat fungsi ini; hasilnya null bila belum siap. */
@@ -226,10 +227,10 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
     set(lengan,'position',`0 ${yL} 0.22`); set(kepala,'position',`0 ${yL-0.05} 0.5`); set(kepala,'rotation',`${dg} 0 0`);
     const ay=yL-0.14, az=0.47, d=Math.hypot(ay,az-0.1);
     set(sinar,'height',d); set(sinar,'radius-bottom',Math.min(W,2.4)/2); set(sinar,'position',`0 ${ay/2} ${(az+0.1)/2}`); set(sinar,'rotation',`${Math.atan2(az-0.1,ay)*180/Math.PI} 0 0`);
-    const Wp=Math.round(Math.max(2.2,Math.min(2.6,W*1.05))*10)/10, tw=Wp-0.2, yP=-(H/2+0.43);
-    aturPlakat(plk,Wp,0.74,0.1,`0 ${yP} 0.05`);
-    set(tJd,'width',tw); set(tJd,'position',`0 ${yP+(baris2?0.13:0)} 0.07`);
-    if(tB2){ set(tB2,'width',tw); set(tB2,'position',`0 ${yP-0.2} 0.07`); }
+    const Wp=Math.round(Math.max(2.2,Math.min(2.6,W*1.05))*10)/10, tw=Wp-0.2, yP=-(H/2+0.36);   // v2.22: plakat lebih pendek (0,6), tepi atas tetap sama, jarak baris rapat
+    aturPlakat(plk,Wp,0.6,0.1,`0 ${yP} 0.05`);
+    set(tJd,'width',tw); set(tJd,'position',`0 ${yP+(baris2?0.09:0)} 0.07`);
+    if(tB2){ set(tB2,'width',tw); set(tB2,'position',`0 ${yP-0.11} 0.07`); }
     set(td,'position',`${W/2-0.2} ${H/2-0.2} 0.16`);
   };
   atur(2.0,1.5);
@@ -405,7 +406,7 @@ addEventListener('pointerup',()=>setTimeout(()=>{ awal=null; },0));
 function klikSah(){ return modeVR||geser<10; }      // geser layar untuk menoleh tidak dihitung klik
 siapScene(()=>$('cam').setAttribute('look-controls','magicWindowTrackingEnabled',false));   // matikan giroskop HP (penyebab layar bergoyang); ditunda sampai A-Frame siap
 
-let joy={x:0,y:0}, tJoy=performance.now(), joyId=null;
+/* (joy, tJoy, joyId dideklarasikan di bagian atas file, sebelum cekTabrak) */
 const sentuh = matchMedia('(pointer:coarse)').matches;
 if(sentuh){
   document.head.insertAdjacentHTML('beforeend','<style>#joy{position:fixed;right:16px;bottom:92px;width:92px;height:92px;border-radius:50%;background:rgba(20,40,50,.38);border:3px solid rgba(255,255,255,.95);box-shadow:0 0 0 2px rgba(20,40,50,.6),0 2px 10px rgba(0,0,0,.35);z-index:11;touch-action:none;display:none}#joy i{position:absolute;left:26px;top:26px;width:34px;height:34px;border-radius:50%;background:#1d5f7c;border:2px solid #fff}</style>');
@@ -997,15 +998,16 @@ function isiSayap(){
     const idx=daftarKarya.push({k,s})-1;
     const im=el(s.f,'a-image',{width:s.mw,height:s.mh,position:'0 0 0.035',src:kecil(k.url,512),class:'klik',role:'img','aria-label':'Karya '+namaAman(k.nama)+': '+temaKarya(k).tema});
     s.im=im; im.addEventListener('click',()=>{ if(klikSah()) bukaKarya(idx); }); pulihGambar(im,k.url,512,()=>{ im.remove(); if(s.im===im) s.im=null; });
-    const tm=temaKarya(k), kt=el(s.f,'a-entity',{position:`0 ${-(s.mh/2+0.4)} 0.03`});   // v2.22: plakat 3 baris (pelukis, tema, aliran) diturunkan 0,1 m dan diperbesar
-    el(kt,'a-box',{width:1.7,height:0.6,depth:0.02,color:'#ece7dc'});
-    el(kt,'a-text',{value:(k.milikSaya?'Karyamu: ':'')+(namaAman(k.nama)||'Siswa').slice(0,18),align:'center',font:'exo2bold',width:1.6,wrapCount:22,position:'0 0.2 0.02',color:'#2b2118'});
-    el(kt,'a-text',{value:String(tm.tema).slice(0,26),align:'center',width:1.6,wrapCount:28,position:'0 0.01 0.02',color:'#4a3f33'});
-    el(kt,'a-text',{value:[tm.aliran,tm.palet].filter(Boolean).join(' | ').slice(0,28)||'Karya siswa',align:'center',width:1.5,wrapCount:30,position:'0 -0.19 0.02',color:TEAL});
+    const tm=temaKarya(k), kt=el(s.f,'a-entity',{position:`0 ${-(s.mh/2+0.31)} 0.03`});   // v2.22: plakat gaya museum (dasar cokelat tua, tepi emas, judul emas, teks krem), ringkas dan rapat
+    const pk=plakatBulat(kt); aturPlakat(pk,1.3,0.4,0.05,'0 0 0.011');
+    const bar=(v,w,mn,y,warna,tebal)=>{ v=String(v); const at={value:v,align:'center',width:w,wrapCount:Math.max(mn,v.length+1),position:`0 ${y} 0.025`,color:warna}; if(tebal) at.font='exo2bold'; el(kt,'a-text',at); };
+    bar((k.milikSaya?'Karyamu: ':'')+(namaAman(k.nama)||'Siswa').slice(0,18),1.1,20,0.1,'#e9c46a',true);
+    bar(String(tm.tema).slice(0,26),1.1,22,0,'#f3e6c8');
+    bar([tm.aliran,String(tm.palet||'').split(' (')[0]].filter(Boolean).join(' | ').slice(0,34)||'Karya siswa',1.1,24,-0.1,'#e0d2b0');   // palet tanpa keterangan dalam kurung agar tidak terpotong
     s.kartu=kt;
     ukuranGambar(k.url,512).then(d=>{ if(s.v!==ver||!d) return; const [w,h]=fitRasio(d[0],d[1],s.mw,s.mh);
       im.setAttribute('width',w); im.setAttribute('height',h); s.luar.setAttribute('width',w+0.1); s.luar.setAttribute('height',h+0.1); s.kanvas.setAttribute('width',w); s.kanvas.setAttribute('height',h);
-      kt.setAttribute('position',`0 ${-(h/2+0.4)} 0.03`); });
+      kt.setAttribute('position',`0 ${-(h/2+0.31)} 0.03`); });
   });
   if(judulSayap) judulSayap.forEach(j=>j.setAttribute('value',n+' karya terpajang'+(maks>0?' (halaman '+(halaman+1)+' dari '+(maks+1)+')':'')));
   perbaruiPager(); perbaruiLayar();
