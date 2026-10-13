@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.20 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.21 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -63,12 +63,13 @@ function bangunGedung(g){
   for(let i=-4;i<=4;i+=2){ if(i===0) continue; const cx=i*1.9;
     el(g,'a-cylinder',{position:`${cx} 4 1.6`,radius:0.4,height:8,color:'#efe8d9'});
     kotak(g,cx,0.19,1.6,1.0,0.3,1.0,'#efe8d9'); kotak(g,cx,7.85,1.6,1.0,0.3,1.0,'#efe8d9'); }   // v2.19 T12: alas (atas y 0,34) dan kepala kolom (atas y 8,0)
-  kotak(g,0,9.7,0.7,8,1.7,0.7,'#2b2118'); kotak(g,0,10.58,0.7,8.2,0.08,0.78,'#c9a227'); kotak(g,0,8.82,0.7,8.2,0.08,0.78,'#c9a227');   // v2.20: papan nama dimajukan (muka z 1,05) ke depan pediment, bingkai emas
-  teks(g,'MUSEUM KEUN',0.025,9.675,1.075,21,'#5a4410'); teks(g,'MUSEUM KEUN',0,9.7,1.09,21,'#fff3c4');   // v2.16: duduk di tepi atap (tidak melayang), nama gedung
+  kotak(g,0,9.7,0.7,8,1.7,0.7,'#e4d6b4'); kotak(g,0,10.58,0.7,8.2,0.08,0.78,'#c9a227'); kotak(g,0,8.82,0.7,8.2,0.08,0.78,'#c9a227');   // v2.20: papan nama dimajukan (muka z 1,05) ke depan pediment, bingkai emas
+  teks(g,'MUSEUM KEUN',0.02,9.68,1.075,21,'#f8f0da'); teks(g,'MUSEUM KEUN',0,9.7,1.09,21,'#6f4a0c');   // v2.16: duduk di tepi atap (tidak melayang), nama gedung
   // pintu dua daun; tiap daun bergeser ke samping saat terbuka
   // v2.15: lubang pintu lebar 5 (x -2.5..2.5), tinggi 4. Tiap daun 2.54 x 4.02 supaya menutup rapat tanpa celah ke dinding/ambang.
   const pk = el(g,'a-box',{id:'daunK',position:'-1.25 2 0.1',width:2.54,height:4.02,depth:0.2,color:'#6d4a2b'});
   const pn = el(g,'a-box',{id:'daunN',position:'1.25 2 0.1',width:2.54,height:4.02,depth:0.2,color:'#6d4a2b'});
+  [pk,pn].forEach(d=>{ el(d,'a-plane',{position:'0 0.25 0.105',width:2.1,height:3.1,color:'#c9a227'}); el(d,'a-plane',{position:'0 0.25 0.108',width:1.85,height:2.85,color:'#8fb0b8'}); });   // v2.21: bingkai emas + kaca
   // dinding aula/ruang: sekat antara aula (z 0..-12) dan Ruang Maestro (z -12..-26), celah pintu tengah
   kotak(g,-5.75,4,-12,8.5,8,0.4,batu); kotak(g,5.75,4,-12,8.5,8,0.4,batu); kotak(g,0,6,-12,3,4,0.4,batu);
   // aula: papan denah + penunjuk
@@ -105,6 +106,22 @@ function bangunFasad(g){
     el(g,'a-plane',{position:`${sisi*9.69} ${y} ${z}`,rotation:`0 ${sisi>0?-90:90} 0`,width:1.4,height:1.1,material:'color:#fff1c8;shader:flat'}); };   // sisi dalam
   [-2.5,-6,-9.5].forEach(z=>jendela(-1,z,5));
   [-15.5,-19,-22.5].forEach(z=>{ jendela(-1,z,3.95); jendela(1,z,3.95); });
+  // v2.21 (tampilan saja): atap pelana gedung utama 18 derajat (sama dengan pediment) berwarna krem-pasir, bingkai tepi gelap
+  const crm='#d3c19c', tep='#6a6258', Hu=R*Math.tan(A), Lu=R/Math.cos(A)+0.1, zc=-13.07, dz=26.85;
+  [-1,1].forEach(s=>{ kotak(g,s*(R/2+0.03),y0+Hu/2-0.005,zc,Lu,0.2,dz,crm,{rotation:`0 0 ${-s*18}`}); kotak(g,s*(R+0.05),8.72,zc,0.2,0.25,dz,tep); });
+  kotak(g,0,y0+Hu+0.1,zc,0.3,0.2,dz,tep);
+  el(g,'a-entity',{geometry:`primitive:triangle;vertexA:${-R} ${y0} -26.4;vertexB:${R} ${y0} -26.4;vertexC:0 ${y0+Hu} -26.4`,material:`color:${batu};side:double`});
+  // atap sayap timur: pelana landai 10 derajat, bubungan sejajar sumbu x (ukuran sayap tetap)
+  const Aw=10*Math.PI/180, Hw=6.3*Math.tan(Aw), Lw=6.3/Math.cos(Aw)+0.1;
+  [[-2.85,10],[-9.15,-10]].forEach(([z,rx])=>kotak(g,19.6,8.6+Hw/2+0.1,z,18.6,0.2,Lw,crm,{rotation:`${rx} 0 0`}));
+  kotak(g,19.6,8.6+Hw+0.12,-6,18.6,0.2,0.3,tep); [0.35,-12.35].forEach(z=>kotak(g,19.6,8.72,z,18.6,0.25,0.2,tep));
+  el(g,'a-entity',{geometry:`primitive:triangle;vertexA:28.95 8.6 0.3;vertexB:28.95 8.6 -12.3;vertexC:28.95 ${8.6+Hw} -6`,material:`color:${batu};side:double`});
+  // pilaster sudut, bingkai pintu emas, kepala/alas kolom bergaya ionik, pot cemara di serambi
+  [-9.6,9.6].forEach(x=>kotak(g,x,4.2,0.45,0.7,8,0.3,'#e8dcc3'));
+  kotak(g,0,4.1,0.4,5.5,0.25,0.2,'#c9a227'); [-2.65,2.65].forEach(x=>kotak(g,x,2.05,0.4,0.2,4.1,0.2,'#c9a227'));
+  [-7.6,-3.8,3.8,7.6].forEach(cx=>{ el(g,'a-cylinder',{position:`${cx} 7.7 1.6`,radius:0.46,height:0.12,color:'#efe8d9'}); el(g,'a-cylinder',{position:`${cx} 0.39 1.6`,radius:0.5,height:0.1,color:'#efe8d9'});
+    [-0.36,0.36].forEach(d=>el(g,'a-cylinder',{position:`${cx+d} 7.85 2.13`,rotation:'90 0 0',radius:0.17,height:0.08,color:'#e4dac5','segments-radial':16})); });
+  [-8.9,-5.7,5.7,8.9].forEach(x=>{ el(g,'a-cylinder',{position:`${x} 0.24 1.25`,radius:0.2,height:0.4,color:'#b5562f'}); el(g,'a-cone',{position:`${x} 1.1 1.25`,'radius-bottom':0.24,'radius-top':0.01,height:1.4,color:'#2f5d34','segments-radial':8}); });
 }
 let daun = null;
 function bukaPintu(buka){
@@ -479,6 +496,22 @@ const PLAZA={ y:-0.43,
   bangku:[[-9,9,0],[9,9,0],[-9,17,0],[9,17,0],[-15,13,90],[15,13,90]],
   tanaman:[[-17,3.2,1.2,1],[17,3.2,1.2,2],[-11.5,3.2,1,2],[11.5,3.2,1,1],[-17,20.5,1.2,2],[17,20.5,1.2,1],[-6,21,1,1],[6,21,1,2]],
   lampu:[[-13,6],[13,6],[-13,20],[13,20]] };
+/* v2.21 (tampilan saja, tanpa tabrakan): kolam cermin memanjang, empat taman parterre berpagar tanaman, jalur batu kali. Semua rendah (maks 0,35 m) dari bentuk dasar. */
+function hiasPlaza(g){
+  const W=el(g,'a-entity',{position:`0 ${PLAZA.y} 0`},'dekor'), K=(x,y,z,w,h,d,c)=>kotak(W,x,y,z,w,h,d,c), HIJAU='#2e5d2b';
+  [-2.55,2.55].forEach(x=>K(x,0.015,14.25,0.7,0.03,15.5,'#8d877c'));                                    // jalur batu kali di tepi kolam
+  [-2,2].forEach(x=>K(x,0.05,14.25,0.4,0.1,15.5,'#b7b1a4')); [6.7,21.8].forEach(z=>K(0,0.05,z,4.4,0.1,0.4,'#b7b1a4'));   // bingkai granit
+  el(W,'a-box',{position:'0 0.05 14.25',width:3.6,height:0.06,depth:14.8,material:'color:#6d93aa;roughness:0.1;metalness:0.4'});   // air
+  [8.7,11.4,14.1,16.8,19.5].forEach(z=>{ el(W,'a-cylinder',{position:`0 0.35 ${z}`,radius:0.04,height:0.55,color:'#dcecf4'}); el(W,'a-sphere',{position:`0 0.66 ${z}`,radius:0.09,color:'#eef6fa','segments-width':8,'segments-height':6});
+    el(W,'a-ring',{position:`0 0.09 ${z}`,rotation:'-90 0 0','radius-inner':0.28,'radius-outer':0.36,color:'#b9d3e2','segments-theta':16}); });
+  const parterre=(cx,cz,w,d)=>{ K(cx,0.015,cz,w,0.03,d,'#4b7a3a');
+    [-1,1].forEach(s=>{ K(cx,0.175,cz+s*(d/2-0.12),w,0.35,0.24,HIJAU); K(cx+s*(w/2-0.12),0.175,cz,0.24,0.35,d-0.48,HIJAU); });
+    el(W,'a-torus',{position:`${cx} 0.12 ${cz}`,rotation:'90 0 0',radius:Math.min(w,d)*0.3,'radius-tubular':0.1,'segments-radial':6,'segments-tubular':24,color:HIJAU});
+    el(W,'a-sphere',{position:`${cx} 0.4 ${cz}`,radius:0.55,color:'#3f7d3a','segments-width':10,'segments-height':8});
+    ['#e58fb0','#b79ae0','#f1c94f','#e58fb0'].forEach((c,i)=>el(W,'a-sphere',{position:`${cx+Math.cos(i*1.571+0.8)*0.95} 0.2 ${cz+Math.sin(i*1.571+0.8)*0.95}`,radius:0.1,color:c,'segments-width':6,'segments-height':4}));
+    [-1,1].forEach(s=>el(W,'a-cone',{position:`${cx+s*(w/2-0.6)} 0.3 ${cz+s*(d/2-0.6)}`,'radius-bottom':0.18,'radius-top':0.01,height:0.6,color:HIJAU,'segments-radial':8})); };
+  [-5.5,5.5].forEach(x=>{ parterre(x,10.5,4.6,5); parterre(x,17.25,4.6,5.5); });
+}
 function tiangLampu(g,x,z){
   const w=el(g,'a-entity',{position:`${x} ${PLAZA.y} ${z}`},'dekor');
   el(w,'a-cylinder',{position:'0 0.1 0',radius:0.2,height:0.2,color:'#2b2118'}); el(w,'a-cylinder',{position:'0 1.7 0',radius:0.07,height:3.4,color:'#2b2118'});
@@ -512,7 +545,7 @@ function bangunDekor(g){
   bangku(g,6.5,-10,0); bangku(g,7.9,-19.3,90); bangku(g,-7.9,-19.3,90);
   g.querySelectorAll('.dekor *').forEach(e=>{ if(e.tagName!=='A-TEXT') e.setAttribute('shadow','cast:true;receive:true'); });
   g.querySelectorAll('.lantai').forEach(e=>e.setAttribute('shadow','cast:false;receive:true'));
-  PLAZA.bangku.forEach(([x,z,ry])=>bangku(g,x,z,ry,PLAZA.y)); PLAZA.tanaman.forEach(([x,z,sk,j])=>tanaman(g,x,z,sk,j,PLAZA.y)); PLAZA.lampu.forEach(([x,z])=>tiangLampu(g,x,z));   // v2.19 T16: plaza (dibuat setelah reset SOLID di bangunPatung)
+  PLAZA.bangku.forEach(([x,z,ry])=>bangku(g,x,z,ry,PLAZA.y)); PLAZA.tanaman.forEach(([x,z,sk,j])=>tanaman(g,x,z,sk,j,PLAZA.y)); PLAZA.lampu.forEach(([x,z])=>tiangLampu(g,x,z)); hiasPlaza(g);   // v2.19 T16: plaza (dibuat setelah reset SOLID di bangunPatung)
   aturBayangan(bayangan);
   pesan(sentuh?'Joystick di kanan bawah untuk berjalan, geser layar untuk menoleh, cubit dua jari untuk zoom.':'W/panah atas: maju. S/panah bawah: mundur. A/D: geser. Q/E atau panah kiri/kanan: putar. Z: balik badan. Shift: lari. Roda mouse atau +/-: zoom.',9000);
 }
@@ -1033,4 +1066,4 @@ function gambarDenah(pos){
   return c.toDataURL('image/png');
 }
 
-try{ $('ver').textContent+=' \u00b7 museum 2.20'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
+try{ $('ver').textContent+=' \u00b7 museum 2.21'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)

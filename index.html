@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- Ruang Rupa v2.20 -->
+<!-- Ruang Rupa v2.21 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -71,7 +71,7 @@
 </div>
 <div id="pesan" class="ui" role="status"></div>
 <div id="memuat" role="status" aria-live="polite" style="display:none;position:fixed;inset:0;z-index:30;background:rgba(29,42,47,.88);color:#fff;align-items:center;justify-content:center;font-size:20px;text-align:center;padding:20px">Menyiapkan museum...</div>
-<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.20</div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.21</div>
 
 <a-scene id="scene" embedded style="position:fixed;inset:0" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
@@ -94,7 +94,7 @@ const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.goo
 const FB = { apiKey:'', authDomain:'ruang-rupa.firebaseapp.com', databaseURL:'https://ruang-rupa-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'ruang-rupa' };
 /* ============================================= */
 
-const VERSI = '2.20';   // harus sama dengan nomor di Code.gs (VERSI_)
+const VERSI = '2.21';   // harus sama dengan nomor di Code.gs (VERSI_)
 const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
 let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
 let halaman = 0, zonaAktif = 'A', sudahMasuk = false; const PER = 12;
@@ -278,8 +278,8 @@ function mulaiMultiplayer(){
 window.addEventListener('error',e=>{ try{ if(staf()) pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); else { console.error(e.message); pesan('Ada gangguan. Muat ulang halaman.',8000); } }catch(x){} });
 </script>
 <!-- Tahap 1: modul museum, harus setelah skrip utama -->
-<script src="museum.js?v=2.20"></script>
-<script src="admin.js?v=2.20"></script>
-<script src="akun.js?v=2.20"></script>
+<script src="museum.js?v=2.21"></script>
+<script src="admin.js?v=2.21"></script>
+<script src="akun.js?v=2.21"></script>
 </body>
 </html>
