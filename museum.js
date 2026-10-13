@@ -43,6 +43,40 @@ function el(parent, tag, at, kelas){
 const kotak = (p,x,y,z,w,h,d,c,at={}) => el(p,'a-box',Object.assign({position:`${x} ${y} ${z}`,width:w,height:h,depth:d,color:c},at));
 const teks = (p,v,x,y,z,w,c='#222',ry=0) => el(p,'a-text',{value:v,align:'center',width:w,position:`${x} ${y} ${z}`,rotation:`0 ${ry} 0`,color:c,side:'double'});
 
+/* ---------- v2.25: huruf khusus ----------
+   "MUSEUM SENI" memakai Versailles, nama kurator memakai Moontime.
+   A-Frame hanya punya font MSDF bawaan, jadi teks ini digambar di canvas lalu dipasang sebagai tekstur bidang.
+   Berkas font: taruh di folder fonts/ sejajar index.html (Versailles.ttf, Moontime.ttf), atau pasang di perangkat (local()). */
+const FONT_MUSEUM  = "Versailles, 'Versailles LT Std', Georgia, 'Times New Roman', serif";
+const FONT_KURATOR = "Moontime, 'Brush Script MT', 'Segoe Script', cursive";
+document.head.insertAdjacentHTML('beforeend', `<style>
+@font-face{font-family:'Versailles';src:local('Versailles'),local('Versailles LT Std'),local('Versailles-Roman'),url('fonts/Versailles.ttf') format('truetype'),url('fonts/Versailles.otf') format('opentype'),url('fonts/Versailles.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'Moontime';src:local('Moontime'),local('Moontime Regular'),url('fonts/Moontime.ttf') format('truetype'),url('fonts/Moontime.otf') format('opentype'),url('fonts/Moontime.woff2') format('woff2');font-display:swap}
+</style>`);
+const _teksFont = [];
+/* Bidang teks bertekstur canvas. pw,ph = ukuran bidang (m). opt.lebar = bagian lebar yang boleh dipakai huruf;
+   opt.timbul=[warna,jarak m,lapis] = bayangan gelap berlapis; opt.cahaya=[warna,dx m,dy m] = tepi terang di belakang huruf. */
+function teksFont(p,v,x,y,z,pw,ph,fam,warna,opt={}){
+  const e = el(p,'a-plane',{position:`${x} ${y} ${z}`,width:pw,height:ph});
+  const gambar = ()=>{
+    const pm=Math.min(200,2048/pw), cw=Math.round(pw*pm), ch=Math.round(ph*pm), c=document.createElement('canvas'); c.width=cw; c.height=ch;
+    const g=c.getContext('2d'); g.textAlign='center'; g.textBaseline='middle';
+    let uk=ch*0.8; g.font=`${uk}px ${fam}`; const w=g.measureText(v).width, maks=cw*(opt.lebar||0.9); if(w>maks) uk*=maks/w; g.font=`${uk}px ${fam}`;
+    const cx=cw/2, cy=ch/2+uk*0.04;
+    if(opt.cahaya){ g.fillStyle=opt.cahaya[0]; g.fillText(v,cx+opt.cahaya[1]*pm,cy+opt.cahaya[2]*pm); }
+    if(opt.timbul){ g.fillStyle=opt.timbul[0]; for(let k=opt.timbul[2];k>=1;k--) g.fillText(v,cx+opt.timbul[1]*k*pm,cy+opt.timbul[1]*k*pm); }
+    g.fillStyle=warna; g.fillText(v,cx,cy);
+    e.setAttribute('material',{src:c.toDataURL(),shader:'flat',transparent:true,side:'double',depthWrite:false});
+  };
+  gambar(); _teksFont.push(gambar); return e;
+}
+/* Setelah font selesai dimuat: gambar ulang semua teks khusus dan papan denah di aula */
+function segarHuruf(){
+  _teksFont.forEach(f=>f()); texDenah=null;
+  document.querySelectorAll('.denahPapan').forEach(e=>e.setAttribute('material',{src:denahTex(),shader:'flat'}));
+}
+Promise.all(['64px Versailles','64px Moontime'].map(f=>document.fonts.load(f).catch(()=>{}))).then(segarHuruf);
+
 /* ---------- Gedung: plaza, fasad, pintu, aula ---------- */
 function bangunGedung(g){
   const batu = '#d8cdb8', gelap = '#4a3f33';
@@ -64,7 +98,7 @@ function bangunGedung(g){
     el(g,'a-cylinder',{position:`${cx} 4 1.6`,radius:0.4,height:8,color:'#efe8d9'});
     kotak(g,cx,0.19,1.6,1.0,0.3,1.0,'#efe8d9'); kotak(g,cx,7.85,1.6,1.0,0.3,1.0,'#efe8d9'); }   // v2.19 T12: alas (atas y 0,34) dan kepala kolom (atas y 8,0)
   kotak(g,0,9.7,0.7,8,1.7,0.7,'#e4d6b4'); kotak(g,0,10.58,0.7,8.2,0.08,0.78,'#c9a227'); kotak(g,0,8.82,0.7,8.2,0.08,0.78,'#c9a227');   // v2.20: papan nama dimajukan (muka z 1,05) ke depan pediment, bingkai emas
-  teks(g,'MUSEUM KEUN',0.02,9.68,1.075,21,'#f8f0da'); teks(g,'MUSEUM KEUN',0,9.7,1.09,21,'#6f4a0c');   // v2.16: duduk di tepi atap (tidak melayang), nama gedung
+  teksFont(g,'MUSEUM SENI',0,9.7,1.09,7.6,1.5,FONT_MUSEUM,'#6f4a0c',{lebar:0.92,cahaya:['#f8f0da',0.02,0.02]});   // v2.16: duduk di tepi atap (tidak melayang), nama gedung
   // pintu dua daun; tiap daun bergeser ke samping saat terbuka
   // v2.15: lubang pintu lebar 5 (x -2.5..2.5), tinggi 4. Tiap daun 2.54 x 4.02 supaya menutup rapat tanpa celah ke dinding/ambang.
   const pk = el(g,'a-box',{id:'daunK',position:'-1.25 2 0.1',width:2.54,height:4.02,depth:0.2,color:'#6d4a2b'});
@@ -77,11 +111,11 @@ function bangunGedung(g){
   kotak(g,6.2,2.2,-2.5,4.4,2.8,0.2,gelap);
   kotak(g,4.4,1.1,-2.5,0.16,2.2,0.16,gelap); kotak(g,8.0,1.1,-2.5,0.16,2.2,0.16,gelap);
   kotak(g,4.4,0.05,-2.5,0.8,0.1,0.8,gelap); kotak(g,8.0,0.05,-2.5,0.8,0.1,0.8,gelap);
-  [[-2.39,0],[-2.61,180]].forEach(([zz,ry])=>el(g,'a-plane',{position:`6.2 2.2 ${zz}`,rotation:`0 ${ry} 0`,width:4.2,height:2.68,material:{src:denahTex(),shader:'flat'}}));   // denah gambar, kedua sisi
+  [[-2.39,0],[-2.61,180]].forEach(([zz,ry])=>el(g,'a-plane',{position:`6.2 2.2 ${zz}`,rotation:`0 ${ry} 0`,width:4.2,height:2.68,material:{src:denahTex(),shader:'flat'}},'denahPapan'));   // denah gambar, kedua sisi
 
   kotak(g,0,0.06,-7,0.6,0.04,9,'#d9a21b');                           // jalur emas ke pintu Ruang Maestro
   kotak(g,-1.6,2,-12,0.2,4,0.5,gelap); kotak(g,1.6,2,-12,0.2,4,0.5,gelap); // kusen pintu
-  kotak(g,0,5.0,-11.7,6.5,1.4,0.2,gelap); teksTimbul(g,'MUSEUM KEUN',0,5.3,-11.55,20,'#f3e6c8'); teks(g,'Kurator : Diah Ayu Kurniawati',0,4.6,-11.55,8,'#f3e6c8');   // v2.19 T13: turun 0,6 agar di bawah plafon aula
+  kotak(g,0,5.0,-11.7,6.5,1.4,0.2,gelap); teksFont(g,'MUSEUM SENI',0,5.3,-11.55,6.2,0.9,FONT_MUSEUM,'#f3e6c8',{lebar:0.9,timbul:['#3a2a12',0.012,4]}); teksFont(g,'Kurator : Diah Ayu Kurniawati',0,4.6,-11.55,5.6,0.6,FONT_KURATOR,'#f3e6c8',{lebar:0.92});   // v2.19 T13: turun 0,6 agar di bawah plafon aula
   // lampu hangat palsu (tanpa bayangan)
   el(g,'a-light',{type:'point',color:'#ffe2b0',intensity:0.5,distance:20,position:'0 6 -6'});
   el(g,'a-light',{type:'point',color:'#fff4dc',intensity:0.6,distance:24,position:'0 6 -19'});
@@ -206,7 +240,7 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
 function bangunRuangMaestro(g){
   daftarBingkai=[];
   kotak(g,0,0.03,-19,19,0.04,13,'#f1ede4',{class:'klik lantai'});
-  teksTimbul(g,'RUANG LUKISAN',0,4.3,-25.6,14,'#c9902f'); teksTimbul(g,'ERA MODERNISME',0,3.6,-25.6,14,'#c9902f');   // v2.19 T13: di bawah plafon (y 5,0)
+  teksFont(g,'RUANG LUKISAN',0,4.3,-25.6,7,0.7,FONT_MUSEUM,'#c9902f',{lebar:0.8,timbul:['#3a2a12',0.012,4]}); teksFont(g,'ERA MODERNISME',0,3.6,-25.6,7,0.7,FONT_MUSEUM,'#c9902f',{lebar:0.8,timbul:['#3a2a12',0.012,4]});   // v2.19 T13: di bawah plafon (y 5,0)
   // v2.19 T18: 12 bingkai, urutan keliling searah jarum jam dari pintu: barat dekat ke jauh (1-4), belakang barat ke timur (5-6), timur jauh ke dekat (7-10), depan timur ke barat (11-12)
   const S=[]; for(let n=0;n<4;n++) S.push([-9.6,-14.5-n*3.2,90,Math.PI/2,-5.4,-14.5-n*3.2]);
   S.push([-5.5,-25.64,0,0,-5.5,-21.44],[5.5,-25.64,0,0,5.5,-21.44]);
@@ -355,7 +389,7 @@ function jalanKe(pt){
 /* Tombol pintas ke Ruang Maestro + label tombol atas ikut benar saat pindah zona */
 const pindahAsli = pindah;
 pindah = function(z){ batalJalan(); if(dariAtas){ dariAtas=false; $('bAtas').textContent='Lihat dari atas'; } pindahAsli(z); if(z==='C') arahKamera(Math.PI/2,0); else if(z==='D') arahKamera(-Math.PI/2,0); perbaruiPager(); };
-$('hud').insertAdjacentHTML('beforeend','<button id="bMaestro" class="alt">Museum KEUN</button>');
+$('hud').insertAdjacentHTML('beforeend','<button id="bMaestro" class="alt">Museum SENI</button>');
 $('bMaestro').onclick=()=>{ bukaPintu(true); fadeKe(()=>{ pindah('A'); $('rig').setAttribute('position','0 0 -13.2'); arahKamera(0,0); }); };
 
 /* ---------- v1.06: klik sah (bukan geser layar), joystick sentuh, patung & pahatan ---------- */
@@ -1053,7 +1087,7 @@ function gambarDenah(pos){
   g.fillStyle='#f4ecd8'; g.fillRect(0,0,W,H); g.strokeStyle='#3a2f26'; g.lineWidth=6; g.strokeRect(6,6,W-12,H-12);
   const R=(x1,z1,x2,z2,isi,garis,tebal)=>{ g.fillStyle=isi; g.fillRect(X(x1),Z(z1),(x2-x1)*s,(z2-z1)*s); if(garis){ g.strokeStyle=garis; g.lineWidth=tebal||3; g.strokeRect(X(x1),Z(z1),(x2-x1)*s,(z2-z1)*s); } };
   const O=(x,z,r,isi,garis)=>{ g.fillStyle=isi; g.beginPath(); g.arc(X(x),Z(z),r*s,0,7); g.fill(); if(garis){ g.strokeStyle=garis; g.lineWidth=1.5; g.stroke(); } };   // lingkaran, jari-jari dalam meter
-  const T=(t,x,y,uk,warna,rata,tebal)=>{ g.font=(tebal?'bold ':'')+uk+'px Georgia, serif'; g.fillStyle=warna||'#2b2118'; g.textAlign=rata||'left'; g.textBaseline='middle'; g.fillText(t,x,y); };
+  const T=(t,x,y,uk,warna,rata,tebal,fam)=>{ g.font=(tebal?'bold ':'')+uk+'px '+(fam||'Georgia, serif'); g.fillStyle=warna||'#2b2118'; g.textAlign=rata||'left'; g.textBaseline='middle'; g.fillText(t,x,y); };
   const B=(n,x,z)=>{ g.fillStyle='#8a2c1c'; g.beginPath(); g.arc(X(x),Z(z),10,0,7); g.fill(); T(String(n),X(x),Z(z)+1,13,'#fff','center',true); };
   const bagi=(t,x,y,w,uk,warna,lh)=>{ g.font=uk+'px Georgia, serif'; let baris='',yy=y; t.split(' ').forEach(k=>{ const u=baris?baris+' '+k:k; if(g.measureText(u).width>w&&baris){ T(baris,x,yy,uk,warna); yy+=lh; baris=k; } else baris=u; }); T(baris,x,yy,uk,warna); return yy; };
   // plaza penuh 40 x 22 m, serambi, tiga undak (dari bawah ke atas), empat kolom
@@ -1086,7 +1120,8 @@ function gambarDenah(pos){
   B(1,0,10); B(2,2,-7.5); B(3,-4.6,-5.6); B(4,-3.2,-19); B(5,0,-19.8); B(6,14,-6);
   g.fillStyle='#2b2118'; g.beginPath(); g.moveTo(X(0),Z(5.4)-10); g.lineTo(X(0)-9,Z(5.4)+4); g.lineTo(X(0)+9,Z(5.4)+4); g.fill(); T('PINTU MASUK',X(0),Z(5.4)+20,14,'#2b2118','center',true);
   g.strokeStyle='#2b2118'; g.lineWidth=4; g.beginPath(); g.arc(W-70,90,28,0,7); g.stroke(); T('U',W-70,80,22,'#2b2118','center',true); g.beginPath(); g.moveTo(W-70,94); g.lineTo(W-70,114); g.stroke();
-  T('DENAH MUSEUM KEUN',860,60,34,'#2b2118','left',true); T('Kurator: Diah Ayu Kurniawati',860,100,18,'#6b5a3a');
+  { let uk=34; g.font=uk+'px '+FONT_MUSEUM; while(g.measureText('DENAH MUSEUM SENI').width>380&&uk>18){ uk--; g.font=uk+'px '+FONT_MUSEUM; } T('DENAH MUSEUM SENI',860,60,uk,'#2b2118','left',false,FONT_MUSEUM); }
+  T('Kurator: Diah Ayu Kurniawati',860,102,30,'#6b5a3a','left',false,FONT_KURATOR);   // v2.25: Moontime
   [['Plaza dan pintu masuk','Plaza 40 x 22 m, tiga undak naik ke pintu'],['Aula','20 x 12 m: papan denah, bangku, tanaman'],['Studio AI','Booth 6 x 6 m untuk membuat gambar dengan bantuan AI'],
    ['Ruang Lukisan Era Modernisme','20 x 14 m, 12 bingkai, Romantisme sampai Abstrak'],['Patung dan Pahatan','Empat podium di tengah ruang lukisan'],['Galeri Karya Siswa','Sayap timur 18,6 x 12,6 m: karya Studio AI yang sudah disetujui']]
    .forEach(([a,b],n)=>{ const y=170+n*70; g.fillStyle='#8a2c1c'; g.beginPath(); g.arc(872,y,13,0,7); g.fill(); T(String(n+1),872,y+1,16,'#fff','center',true); T(a,898,y-9,20,'#2b2118','left',true); bagi(b,898,y+14,360,16,'#5b4a30',19); });
@@ -1106,4 +1141,4 @@ function gambarDenah(pos){
   return c.toDataURL('image/png');
 }
 
-try{ $('ver').textContent+=' \u00b7 museum 2.24'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
+try{ $('ver').textContent+=' \u00b7 museum 2.25'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
