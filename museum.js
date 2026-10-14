@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.24 - Museum 3D. Dimuat SETELAH skrip utama di index.html.
+/* Ruang Rupa v2.22 (optimasi kecepatan, plakat karya siswa gaya museum; fitur sampai v2.25 tetap) - Museum 3D. Dimuat SETELAH skrip utama di index.html.
    Memakai: $, gs, pesan, POS, pindah. Menyediakan: bangunMuseum(). */
 const WARNA = { Naturalisme:'#6f8f5a', Realisme:'#8a7a64', Romantisme:'#7b5a8c', Abstrak:'#c9902f', Impresionisme:'#8fb3a3', Kubisme:'#b08a5a', Ekspresionisme:'#b3412f', Surealisme:'#6b5b95', Nusantara:'#c9902f' };
 const RUANG_TAHAP1 = 'Impresionisme';           // Tahap 1: satu ruang saja
@@ -59,7 +59,7 @@ const _teksFont = [];
 function teksFont(p,v,x,y,z,pw,ph,fam,warna,opt={}){
   const e = el(p,'a-plane',{position:`${x} ${y} ${z}`,width:pw,height:ph});
   const gambar = ()=>{
-    const pm=Math.min(200,2048/pw), cw=Math.round(pw*pm), ch=Math.round(ph*pm), c=document.createElement('canvas'); c.width=cw; c.height=ch;
+    const pm=Math.min(sentuh?100:200,2048/pw), cw=Math.round(pw*pm), ch=Math.round(ph*pm), c=document.createElement('canvas'); c.width=cw; c.height=ch;
     const g=c.getContext('2d'); g.textAlign='center'; g.textBaseline='middle';
     let uk=ch*0.8; g.font=`${uk}px ${fam}`; const w=g.measureText(v).width, maks=cw*(opt.lebar||0.9); if(w>maks) uk*=maks/w; g.font=`${uk}px ${fam}`;
     const cx=cw/2, cy=ch/2+uk*0.04;
@@ -195,8 +195,8 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
   const kanvas = el(f,'a-plane',{position:'0 0 0.094',color:kosong?'#e7e1d3':w,class:'klik',role:'img',
     'aria-label':kosong?'Bingkai kosong':`${k.judul}, ${k.pelukis}`});
   let im=null;
-  if(k && k.gambar){ im=el(f,'a-image',{position:'0 0 0.1',src:k.gambar,class:'klik'});
-    im.addEventListener('click',()=>{ if(klikSah()) buka(i); }); im.addEventListener('error',()=>im.remove()); }
+  if(k && k.gambar){ im=el(f,'a-image',{position:'0 0 0.1',src:kecil(k.gambar,1024),class:'klik'});
+    im.addEventListener('click',()=>{ if(klikSah()) buka(i); }); pulihGambar(im,k.gambar,1024); }
   // papan aliran
   const adaAliran = !kosong && !!k.aliran;
   const pAl = adaAliran ? plakatBulat(f) : null;
@@ -226,10 +226,10 @@ function bingkaiLukisan(g, k, i, x, z, ry, yaw, sx, sz){
     set(lengan,'position',`0 ${yL} 0.22`); set(kepala,'position',`0 ${yL-0.05} 0.5`); set(kepala,'rotation',`${dg} 0 0`);
     const ay=yL-0.14, az=0.47, d=Math.hypot(ay,az-0.1);
     set(sinar,'height',d); set(sinar,'radius-bottom',Math.min(W,2.4)/2); set(sinar,'position',`0 ${ay/2} ${(az+0.1)/2}`); set(sinar,'rotation',`${Math.atan2(az-0.1,ay)*180/Math.PI} 0 0`);
-    const Wp=Math.round(Math.max(2.2,Math.min(2.6,W*1.05))*10)/10, tw=Wp-0.2, yP=-(H/2+0.43);
-    aturPlakat(plk,Wp,0.74,0.1,`0 ${yP} 0.05`);
-    set(tJd,'width',tw); set(tJd,'position',`0 ${yP+(baris2?0.13:0)} 0.07`);
-    if(tB2){ set(tB2,'width',tw); set(tB2,'position',`0 ${yP-0.2} 0.07`); }
+    const Wp=Math.round(Math.max(2.2,Math.min(2.6,W*1.05))*10)/10, tw=Wp-0.2, yP=-(H/2+0.36);   // v2.22: plakat lebih pendek (0,6), tepi atas tetap sama, jarak baris rapat
+    aturPlakat(plk,Wp,0.6,0.1,`0 ${yP} 0.05`);
+    set(tJd,'width',tw); set(tJd,'position',`0 ${yP+(baris2?0.09:0)} 0.07`);
+    if(tB2){ set(tB2,'width',tw); set(tB2,'position',`0 ${yP-0.11} 0.07`); }
     set(td,'position',`${W/2-0.2} ${H/2-0.2} 0.16`);
   };
   atur(2.0,1.5);
@@ -302,7 +302,7 @@ function spanduk(g){
     el(w,'a-box',{position:'0 1.9 0',width:1.2,height:0.07,depth:0.07,color:'#c9a227'});                       // tongkat gantung
     el(w,'a-plane',{width:1.0,height:3.5,color:warna,side:'double'});                                           // kain
     [[0,1.72,1.0,0.05],[0,-1.72,1.0,0.05],[-0.49,0,0.05,3.5],[0.49,0,0.05,3.5]].forEach(([a,b,ww,hh])=>el(w,'a-plane',{position:`${a} ${b} 0.01`,width:ww,height:hh,color:'#c9a227'})); // list emas
-    if(k&&k.gambar){ const im=el(w,'a-image',{position:'0 0.85 0.02',width:0.8,height:0.8,src:k.gambar});   // v2.19 T17f: rasio asli
+    if(k&&k.gambar){ const im=el(w,'a-image',{position:'0 0.85 0.02',width:0.8,height:0.8,src:kecil(k.gambar,1024)}); pulihGambar(im,k.gambar,1024);   // v2.19 T17f: rasio asli
       ukuranGambar(k.gambar).then(d=>{ if(!d||!im.parentNode) return; const [a,b]=fitRasio(d[0],d[1],0.8,0.8); im.setAttribute('width',a); im.setAttribute('height',b); }); }
     else el(w,'a-circle',{position:'0 0.85 0.02',radius:0.34,color:'#c9a227'});
     teksLapis(w,k?String(k.judul).slice(0,50):'Segera hadir',0,-0.35,0.03,1.0,11,'#fff3c4','#3a2a12');
@@ -321,13 +321,18 @@ function spanduk(g){
 }
 
 /* ---------- Titik masuk dari index.html ---------- */
+/* v2.22: jeda satu frame antar bagian supaya layar "Menyiapkan museum..." tetap bergerak dan HP tidak membeku. Urutan pembangunan SAMA seperti sebelumnya. */
+const jedaFrame=()=>new Promise(r=>{ let s=false; const f=()=>{ if(!s){ s=true; r(); } }; requestAnimationFrame(f); setTimeout(f,100); });
 async function bangunMuseum(){
-  try{ koleksi = await gs('getKoleksi'); }catch(e){ koleksi=[]; pesan('Koleksi belum bisa dimuat: '+e.message,6000); }
+  if(dataAwal&&dataAwal.koleksi) koleksi=dataAwal.koleksi;   // v2.22: sudah diambil bersama galeri
+  else{ try{ koleksi = await gs('getKoleksi'); }catch(e){ koleksi=[]; pesan('Koleksi belum bisa dimuat: '+e.message,6000); } }
   const d=$('dunia'); d.querySelectorAll('.zm').forEach(e=>e.remove());
+  _teksFont.length=0;   // v2.22: bangun ulang tidak menumpuk penggambar teks lama
   const g=document.createElement('a-entity'); g.classList.add('zm'); d.append(g);
-  bangunGedung(g); bangunFasad(g); bangunRuangMaestro(g); bangunPatung(g); bangunDekor(g); spanduk(g); bangunSayap(g); bangunBooth(g);
+  for(const f of [bangunGedung,bangunFasad,bangunRuangMaestro,bangunPatung,bangunDekor,spanduk,bangunSayap,bangunBooth]){ f(g); await jedaFrame(); }
   g.querySelectorAll('.lantai').forEach(f=>f.addEventListener('click',e=>{ if(e.detail&&e.detail.intersection) jalanKe(e.detail.intersection.point); }));
-  muatPoin();   // Tahap 3: poin dan tanda selesai (tidak menahan pemuatan museum)
+  if(dataAwal&&dataAwal.poin){ poinSaya=dataAwal.poin; perbaruiPoinUI(); } else muatPoin();   // Tahap 3: poin dan tanda selesai (tidak menahan pemuatan museum)
+  dataAwal=null;
 }
 
 /* ---------- v1.05: berjalan lebih natural ---------- */
@@ -358,7 +363,7 @@ function tinggiTanah(x,z){
   return -0.47;                                                // plaza dan tanah luar
 }
 let prevPos = null;
-(function cekTabrak(){ requestAnimationFrame(cekTabrak);
+requestAnimationFrame(function cekTabrak(){ requestAnimationFrame(cekTabrak);   // v2.22: mulai di frame berikutnya (museum.js kini dimuat setelah login; panggilan langsung menyentuh tJoy sebelum dideklarasikan)
   const yy=$('rig').object3D.position.y;   // status 'dari atas' dibaca dari tinggi kamera, jadi tabrakan tidak pernah tertinggal mati
   if((yy>5)!==dariAtas){ dariAtas=yy>5; $('bAtas').textContent=dariAtas?'Turun ke plaza':'Lihat dari atas'; }
   gerakKunci();
@@ -371,7 +376,7 @@ let prevPos = null;
     else if(!dalamPadat(prevPos.x,p.z)) p.x=prevPos.x; else if(!dalamPadat(p.x,prevPos.z)) p.z=prevPos.z; else { p.x=prevPos.x; p.z=prevPos.z; } }
   else if(!prevPos) keluarkan(p);
   { const ty=tinggiTanah(p.x,p.z); p.y = Math.abs(ty-p.y)<0.004 ? ty : p.y+(ty-p.y)*0.3; }   // v2.18 T11: naik/turun undak dengan halus
-  prevPos={x:p.x,z:p.z}; })();
+  prevPos={x:p.x,z:p.z}; });
 
 /* Klik lantai = berjalan halus. Jalur dipotong di dinding pertama (tidak bisa menembus). Di HP dimatikan: hanya joystick. */
 let jalanId=0; function batalJalan(){ jalanId++; }
@@ -388,7 +393,7 @@ function jalanKe(pt){
 
 /* Tombol pintas ke Ruang Maestro + label tombol atas ikut benar saat pindah zona */
 const pindahAsli = pindah;
-pindah = function(z){ batalJalan(); if(dariAtas){ dariAtas=false; $('bAtas').textContent='Lihat dari atas'; } pindahAsli(z); if(z==='C') arahKamera(Math.PI/2,0); else if(z==='D') arahKamera(-Math.PI/2,0); perbaruiPager(); };
+pindah = function(z){ batalJalan(); const dariAtasTadi=dariAtas; if(dariAtas){ dariAtas=false; $('bAtas').textContent='Lihat dari atas'; } pindahAsli(z); if(z==='C') arahKamera(Math.PI/2,0); else if(z==='D') arahKamera(-Math.PI/2,0); else if(dariAtasTadi) arahKamera(0,0); perbaruiPager(); };   // v2.22: keluar dari 'Lihat dari atas' ke zona lain: pandangan kembali lurus (sebelumnya tetap menunduk)
 $('hud').insertAdjacentHTML('beforeend','<button id="bMaestro" class="alt">Museum SENI</button>');
 $('bMaestro').onclick=()=>{ bukaPintu(true); fadeKe(()=>{ pindah('A'); $('rig').setAttribute('position','0 0 -13.2'); arahKamera(0,0); }); };
 
@@ -915,7 +920,14 @@ let slotSayap=[], daftarKarya=[], karyaAktif=-1, PER_SAYAP=42, judulSayap=[];
 let layarBooth={im:null,fb:null,i:0};
 
 function fitRasio(nw,nh,mw,mh){ if(!(nw>0&&nh>0)) return [mw,mh]; const r=nw/nh; let w=mw,h=w/r; if(h>mh){ h=mh; w=h*r; } return [w,h]; }
-function ukuranGambar(url){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res([im.naturalWidth,im.naturalHeight]); im.onerror=()=>res(null); im.src=url; }); }
+/* v2.22: gambar Drive (lh3.googleusercontent.com/d/ID) diminta dalam ukuran kecil (=sPX: sisi terpanjang PX piksel) agar memori GPU HP tidak habis.
+   Bila ukuran kecil gagal dimuat, dipakai alamat asli. Ukuran asli disimpan di sheet; rasio gambar sama. */
+function kecil(url,px){ return /^https:\/\/lh3\.googleusercontent\.com\/d\/[\w-]+$/.test(String(url||''))?url+'=s'+px:url; }
+function pulihGambar(im,asli,px,saatGagal){ let coba=false; im.addEventListener('error',()=>{ if(!coba&&kecil(asli,px)!==asli){ coba=true; im.setAttribute('src',asli); } else (saatGagal||(()=>im.remove()))(); }); }
+const _ukuranMemo={};
+function ukuranGambar(url,px){ px=px||1024; const key=url+'|'+px; if(_ukuranMemo[key]) return _ukuranMemo[key];
+  const muat=u=>new Promise(res=>{ const im=new Image(); im.onload=()=>res([im.naturalWidth,im.naturalHeight]); im.onerror=()=>res(null); im.src=u; });
+  return _ukuranMemo[key]=muat(kecil(url,px)).then(d=>d||(kecil(url,px)!==url?muat(url):null)).then(d=>{ if(!d) delete _ukuranMemo[key]; return d; }); }
 function temaKarya(k){ const p=String(k.prompt||'').split(' / '); return p.length>=2?{tema:p[0],aliran:p[1],palet:p[2]||''}:{tema:String(k.prompt||'Tanpa tema'),aliran:'',palet:''}; }
 
 /* ---------- Sayap Karya Siswa (sisi timur aula, x 10.3..28.3, z -11.7..-0.3) ---------- */
@@ -983,17 +995,18 @@ function isiSayap(){
     if(!k){ s.ket.setAttribute('visible',true); s.luar.setAttribute('color','#2b2118'); return; }
     s.ket.setAttribute('visible',false); s.luar.setAttribute('color',k.milikSaya?'#d9a21b':'#2b2118');
     const idx=daftarKarya.push({k,s})-1;
-    const im=el(s.f,'a-image',{width:s.mw,height:s.mh,position:'0 0 0.035',src:k.url,class:'klik',role:'img','aria-label':'Karya '+namaAman(k.nama)+': '+temaKarya(k).tema});
-    s.im=im; im.addEventListener('click',()=>{ if(klikSah()) bukaKarya(idx); }); im.addEventListener('error',()=>{ im.remove(); if(s.im===im) s.im=null; });
-    const tm=temaKarya(k), kt=el(s.f,'a-entity',{position:`0 ${-(s.mh/2+0.4)} 0.03`});   // v2.22: plakat 3 baris (pelukis, tema, aliran) diturunkan 0,1 m dan diperbesar
-    el(kt,'a-box',{width:1.7,height:0.6,depth:0.02,color:'#ece7dc'});
-    el(kt,'a-text',{value:(k.milikSaya?'Karyamu: ':'')+(namaAman(k.nama)||'Siswa').slice(0,18),align:'center',font:'exo2bold',width:1.6,wrapCount:22,position:'0 0.2 0.02',color:'#2b2118'});
-    el(kt,'a-text',{value:String(tm.tema).slice(0,26),align:'center',width:1.6,wrapCount:28,position:'0 0.01 0.02',color:'#4a3f33'});
-    el(kt,'a-text',{value:[tm.aliran,tm.palet].filter(Boolean).join(' | ').slice(0,28)||'Karya siswa',align:'center',width:1.5,wrapCount:30,position:'0 -0.19 0.02',color:TEAL});
+    const im=el(s.f,'a-image',{width:s.mw,height:s.mh,position:'0 0 0.035',src:kecil(k.url,512),class:'klik',role:'img','aria-label':'Karya '+namaAman(k.nama)+': '+temaKarya(k).tema});
+    s.im=im; im.addEventListener('click',()=>{ if(klikSah()) bukaKarya(idx); }); pulihGambar(im,k.url,512,()=>{ im.remove(); if(s.im===im) s.im=null; });
+    const tm=temaKarya(k), kt=el(s.f,'a-entity',{position:`0 ${-(s.mh/2+0.31)} 0.03`});   // v2.22: plakat gaya museum (dasar cokelat tua, tepi emas, judul emas, teks krem), ringkas dan rapat
+    const pk=plakatBulat(kt); aturPlakat(pk,1.3,0.4,0.05,'0 0 0.011');
+    const bar=(v,w,mn,y,warna,tebal)=>{ v=String(v); const at={value:v,align:'center',width:w,wrapCount:Math.max(mn,v.length+1),position:`0 ${y} 0.025`,color:warna}; if(tebal) at.font='exo2bold'; el(kt,'a-text',at); };
+    bar((k.milikSaya?'Karyamu: ':'')+(namaAman(k.nama)||'Siswa').slice(0,18),1.1,20,0.1,'#e9c46a',true);
+    bar(String(tm.tema).slice(0,26),1.1,22,0,'#f3e6c8');
+    bar([tm.aliran,String(tm.palet||'').split(' (')[0]].filter(Boolean).join(' | ').slice(0,34)||'Karya siswa',1.1,24,-0.1,'#e0d2b0');   // palet tanpa keterangan dalam kurung agar tidak terpotong
     s.kartu=kt;
-    ukuranGambar(k.url).then(d=>{ if(s.v!==ver||!d) return; const [w,h]=fitRasio(d[0],d[1],s.mw,s.mh);
+    ukuranGambar(k.url,512).then(d=>{ if(s.v!==ver||!d) return; const [w,h]=fitRasio(d[0],d[1],s.mw,s.mh);
       im.setAttribute('width',w); im.setAttribute('height',h); s.luar.setAttribute('width',w+0.1); s.luar.setAttribute('height',h+0.1); s.kanvas.setAttribute('width',w); s.kanvas.setAttribute('height',h);
-      kt.setAttribute('position',`0 ${-(h/2+0.4)} 0.03`); });
+      kt.setAttribute('position',`0 ${-(h/2+0.31)} 0.03`); });
   });
   if(judulSayap) judulSayap.forEach(j=>j.setAttribute('value',n+' karya terpajang'+(maks>0?' (halaman '+(halaman+1)+' dari '+(maks+1)+')':'')));
   perbaruiPager(); perbaruiLayar();
@@ -1063,7 +1076,7 @@ function perbaruiLayar(){
   if(!layarBooth.im||!layarBooth.im.parentNode) return; const L=galeri.slice(-8).reverse();
   if(!L.length){ layarBooth.im.setAttribute('visible',false); layarBooth.fb.setAttribute('visible',true); return; }
   const k=L[layarBooth.i%L.length];
-  ukuranGambar(k.url).then(d=>{ if(!d||!layarBooth.im.parentNode) return; const [w,h]=fitRasio(d[0],d[1],2.2,1.15); layarBooth.im.setAttribute('src',k.url); layarBooth.im.setAttribute('width',w); layarBooth.im.setAttribute('height',h); layarBooth.im.setAttribute('visible',true); layarBooth.fb.setAttribute('visible',false); });
+  ukuranGambar(k.url,512).then(d=>{ if(!d||!layarBooth.im.parentNode) return; const [w,h]=fitRasio(d[0],d[1],2.2,1.15); layarBooth.im.setAttribute('src',kecil(k.url,512)); layarBooth.im.setAttribute('width',w); layarBooth.im.setAttribute('height',h); layarBooth.im.setAttribute('visible',true); layarBooth.fb.setAttribute('visible',false); });
 }
 setInterval(()=>{ if(document.hidden||!token||!layarBooth.im||kurangiGerak) return; layarBooth.i++; perbaruiLayar(); },6000);
 
@@ -1141,4 +1154,4 @@ function gambarDenah(pos){
   return c.toDataURL('image/png');
 }
 
-try{ $('ver').textContent+=' \u00b7 museum 2.25'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
+try{ $('ver').textContent+=' \u00b7 museum 2.22'; }catch(e){}   // penanda: museum.js termuat sampai akhir (HARUS tetap paling bawah)
