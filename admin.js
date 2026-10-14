@@ -1,4 +1,4 @@
-/* Ruang Rupa v2.22 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Moderasi, Rekap, Pengguna, Log. Dimuat setelah museum.js.
+/* DAK v2.23 - Panel Admin: Langkah awal, Lukisan, Kelas, Soal, Moderasi, Rekap, Pengguna, Log. Dimuat setelah museum.js.
    Menyembunyikan tombol hanyalah kenyamanan; hak akses sebenarnya diperiksa server (wajibPeran_). */
 const RANK = { siswa:1, manajer:2, admin:3, pemilik:4 };
 let kelasData = [], tabAdm = 'mulai';
@@ -11,13 +11,13 @@ function siapkanAdmin(){
   if((RANK[saya.peran]||0)<2||$('bAdmin')) return;
   ($('hudAdmin')||$('hud')).insertAdjacentHTML('beforeend','<button id="bAdmin">Panel Admin</button>'); if($('hudAdmin')) $('hudAdmin').parentElement.style.display='block'; $('bAdmin').onclick=bukaAdmin;
 }
-function tutupAdmin(){ const buka=$('adm').style.display==='block'; $('adm').style.display='none'; if(buka&&sudahMasuk&&window.renderJeda) renderJeda(false); }   // v2.22: 3D digambar lagi setelah panel ditutup
+function tutupAdmin(){ const buka=$('adm').style.display==='block'; $('adm').style.display='none'; if(buka&&sudahMasuk&&window.renderJeda) renderJeda(false); }   // v2.23: 3D digambar lagi setelah panel ditutup
 $('admTutup').onclick=tutupAdmin;
 addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('adm').style.display==='block') tutupAdmin(); });
 const keLoginAsli=keLogin; keLogin=function(i){ tutupAdmin(); const b=$('bAdmin'); if(b) b.remove(); if($('hudAdmin')) $('hudAdmin').parentElement.style.display='none'; keLoginAsli(i); };
 
 async function bukaAdmin(){
-  $('adm').style.display='block'; $('admIsi').textContent='Memuat...'; if(window.renderJeda) renderJeda(true);   // v2.22: hentikan penggambaran museum 3D di belakang panel
+  $('adm').style.display='block'; $('admIsi').textContent='Memuat...'; if(window.renderJeda) renderJeda(true);   // v2.23: hentikan penggambaran museum 3D di belakang panel
   try{ kelasData=await gs('adminDaftarKelas'); }catch(e){ tutupAdmin(); return pesan(e.message); }
   pilihTab(kelasData.length?'kelas':'mulai');
 }
@@ -53,7 +53,7 @@ function renderKelas(){
 }
 async function renderPengguna(){
   const isi=$('admIsi'); isi.textContent='Memuat...';
-  let u; try{ /* v2.22: dua panggilan paralel */ [u,kelasData]=await Promise.all([gs('adminDaftarPengguna'),gs('adminDaftarKelas')]); }catch(e){ isi.textContent=e.message; return; }
+  let u; try{ /* v2.23: dua panggilan paralel */ [u,kelasData]=await Promise.all([gs('adminDaftarPengguna'),gs('adminDaftarKelas')]); }catch(e){ isi.textContent=e.message; return; }
   const kepala=[];
   if((RANK[saya.peran]||0)>=3){
     const em=h('input',{type:'email',placeholder:'email Google',style:'min-width:220px'}), pr=h('select',{},opt('manajer','manajer'),opt('admin','admin'));
@@ -102,7 +102,7 @@ async function renderLukisan(){
   const urlAman=u=>/^https:\/\/lh3\.googleusercontent\.com\/d\/[\w-]+$/.test(String(u||''));
   const nonaktifkan=x=>h('button',{className:'alt',textContent:'Nonaktifkan',onclick:async()=>{ if(!confirm('Nonaktifkan "'+x.judul+'"?')) return;
     try{ await gs('adminHapusLukisan',x.id); renderLukisan(); }catch(e){ pesan(e.message); } }});
-  const thumb=x=>{ const t=h('img',{alt:x.gambar?'Gambar '+x.judul:'',style:'width:56px;height:42px;object-fit:cover;border-radius:3px;background:#eee'}); if(urlAman(x.gambar)){ t.onerror=()=>{ t.onerror=null; t.src=x.gambar; }; t.src=kecil(x.gambar,160); } return t; };   // v2.22: miniatur kecil, bukan gambar penuh
+  const thumb=x=>{ const t=h('img',{alt:x.gambar?'Gambar '+x.judul:'',style:'width:56px;height:42px;object-fit:cover;border-radius:3px;background:#eee'}); if(urlAman(x.gambar)){ t.onerror=()=>{ t.onerror=null; t.src=x.gambar; }; t.src=kecil(x.gambar,160); } return t; };   // v2.23: miniatur kecil, bukan gambar penuh
   const baris12=[]; for(let n=1;n<=12;n++){
     const x=slot[n];
     if(!x){ baris12.push(h('tr',{},h('td',{textContent:String(n)}),h('td',{textContent:'-'}),h('td',{textContent:'Kosong',style:'color:#8a7f6c'}),h('td',{textContent:'-'}),h('td',{textContent:'-'}),
@@ -234,7 +234,7 @@ async function renderModerasi(){
         try{ await gs('adminModerasi',k.email,a); pesan('Tersimpan.'); muat(); }catch(e){ pesan(e.message,6000); ev.target.disabled=false; } }});
       const aksi=k.status==='menunggu'?[act('Setujui','setujui'),act('Tolak','tolak',true)]:k.status==='disetujui'?[act('Sembunyikan','sembunyikan',true)]:[act('Setujui lagi','setujui')];
       const img=h('img',{alt:'Karya '+k.nama,style:'max-width:180px;max-height:180px;border-radius:4px'});
-      if(/^https:\/\/lh3\.googleusercontent\.com\/d\/[\w-]+$/.test(k.url)){ img.onerror=()=>{ img.onerror=null; img.src=k.url; }; img.src=kecil(k.url,400); }   // v2.22: gambar karya dimuat kecil
+      if(/^https:\/\/lh3\.googleusercontent\.com\/d\/[\w-]+$/.test(k.url)){ img.onerror=()=>{ img.onerror=null; img.src=k.url; }; img.src=kecil(k.url,400); }   // v2.23: gambar karya dimuat kecil
       return h('div',{className:'bar',style:'align-items:flex-start;border-bottom:1px solid #ddd;padding-bottom:8px'},img,
         h('div',{style:'flex:1;min-width:200px'},h('b',{textContent:k.nama+' ('+k.email+')'}),h('div',{textContent:'Tema: '+k.prompt,style:'font-size:13px'}),
           h('div',{textContent:k.suka+' suka',style:'font-size:13px'}),h('div',{className:'bar'},...aksi)));
@@ -244,4 +244,4 @@ async function renderModerasi(){
   muat();
 }
 
-try{ document.getElementById('ver').textContent+=' \u00b7 admin 2.22'; }catch(e){}
+try{ tandaiModul('admin','2.23'); }catch(e){}

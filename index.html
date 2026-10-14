@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
-<!-- Ruang Rupa v2.22 -->
+<!-- DAK v2.23 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ruang Rupa Interaktif</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<!-- v2.22: A-Frame dan Firebase tidak lagi menahan halaman. Keduanya dimuat setelah kotak login tampil (lihat muatSekali di skrip utama). -->
+<!-- v2.23: A-Frame dan Firebase tidak lagi menahan halaman. Keduanya dimuat setelah kotak login tampil (lihat muatSekali di skrip utama). -->
 <style>
   :root { --ink:#1d2a2f; --paper:#f7f5f0; --accent:#2f6f8f; --warn:#b3412f; }
   body { margin:0; font:16px/1.5 system-ui,sans-serif; color:var(--ink); }
@@ -69,9 +69,9 @@
 </div>
 <div id="pesan" class="ui" role="status"></div>
 <div id="memuat" role="status" aria-live="polite" style="display:none;position:fixed;inset:0;z-index:30;background:rgba(29,42,47,.88);color:#fff;align-items:center;justify-content:center;font-size:20px;text-align:center;padding:20px">Menyiapkan museum...</div>
-<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">v2.22</div>
+<div id="ver" style="position:fixed;left:8px;bottom:2px;z-index:5;font-size:11px;opacity:.65;pointer-events:none">Diah Ayu Kurniawati 2.23</div>
 
-<!-- v2.22: markup scene disuntikkan oleh pasangScene() SETELAH A-Frame dimuat. A-Frame yang dimuat belakangan tidak bisa menginisialisasi <a-scene> yang sudah ada di halaman (anak didaftarkan sebelum induk). -->
+<!-- v2.23: markup scene disuntikkan oleh pasangScene() SETELAH A-Frame dimuat. A-Frame yang dimuat belakangan tidak bisa menginisialisasi <a-scene> yang sudah ada di halaman (anak didaftarkan sebelum induk). -->
 <template id="tplScene"><a-scene id="scene" embedded style="position:fixed;inset:0;background:#dfe6e8" renderer="antialias:true" background="color:#dfe6e8" vr-mode-ui="enabled:false" cursor="rayOrigin:mouse" raycaster="objects:.klik">
   <a-entity light="type:ambient;intensity:0.7"></a-entity>
   <a-entity light="type:directional;intensity:0.6" position="2 6 3"></a-entity>
@@ -93,12 +93,29 @@ const GOOGLE_CLIENT_ID = '826616122681-5uhithq0tib20nrmeq9i2qlahh5mdpoo.apps.goo
 const FB = { apiKey:'', authDomain:'ruang-rupa.firebaseapp.com', databaseURL:'https://ruang-rupa-default-rtdb.asia-southeast1.firebasedatabase.app', projectId:'ruang-rupa' };
 /* ============================================= */
 
-const VERSI = '2.22';   // harus sama dengan nomor di Code.gs (VERSI_)
+const VERSI = '2.23';   // harus sama dengan nomor di Code.gs (VERSI_)
 const AVATAR = [['Merah','#c0392b'],['Biru','#2f6f8f'],['Hijau','#3f7d4f'],['Kuning','#d9a21b']];
 let saya = { nama:'', avatar:AVATAR[0][1], email:'' }, db = null, galeri = [], draf = null, token = '';
-let praMuat = null, dataAwal = null;   // v2.22: data pameran yang dimuat lebih awal (praMuat) dan diteruskan ke museum.js (dataAwal)
+let praMuat = null, dataAwal = null;   // v2.23: data pameran yang dimuat lebih awal (praMuat) dan diteruskan ke museum.js (dataAwal)
 let halaman = 0, zonaAktif = 'A', sudahMasuk = false; const PER = 12;
 const $ = id => document.getElementById(id);
+/* ===== v2.23: label versi di pojok layar =====
+   Normal: hanya "Diah Ayu Kurniawati 2.23". Bila salah satu dari 5 bagian (index, akun, museum, admin, server) bermasalah, namanya ditambahkan:
+   "Diah Ayu Kurniawati 2.23 error pada museum". Versi yang berbeda ikut ditulis, mis. "server (lama)" = Code.gs belum di-deploy ulang.
+   Tiap file js memanggil tandaiModul() di baris paling bawahnya; bila baris itu tidak tercapai, berarti file gagal dimuat atau berhenti karena galat. */
+const NAMA_VER='Diah Ayu Kurniawati';
+const MODUL={index:VERSI,akun:null,museum:null,admin:null,server:null}, MODUL_GALAT=new Set();
+function perbaruiVer(){
+  const e=$('ver'); if(!e) return;
+  const bad=Object.keys(MODUL).filter(n=>MODUL_GALAT.has(n)||(MODUL[n]&&MODUL[n]!==VERSI)).map(n=>n+(MODUL[n]&&MODUL[n]!==VERSI?' ('+MODUL[n]+')':''));
+  e.textContent=NAMA_VER+' '+VERSI+(bad.length?' error pada '+bad.join(', '):'');
+  e.style.color=bad.length?'#b3261e':''; e.style.opacity=bad.length?'1':'';
+}
+function tandaiModul(n,v){ MODUL[n]=v; perbaruiVer(); }
+function galatModul(n){ MODUL_GALAT.add(n); perbaruiVer(); }
+function galatDariJejak(t){ t=String(t||''); if(/museum\.js/.test(t)) return 'museum'; if(/admin\.js/.test(t)) return 'admin'; if(/akun\.js/.test(t)) return 'akun';
+  const hal=location.href.split(/[?#]/)[0]; return (t.indexOf(hal)>=0&&!/aframe|firebase/.test(t))?'index':null; }
+window.addEventListener('unhandledrejection',ev=>{ try{ const n=galatDariJejak(ev.reason&&ev.reason.stack); if(n) galatModul(n); }catch(x){} });
 function pesan(t, ms=4000){ const p=$('pesan'); p.textContent=t; p.style.display='block'; clearTimeout(pesan.t); pesan.t=setTimeout(()=>p.style.display='none',ms); }
 
 /* v2.17: pesan teknis hanya untuk staf (manajer ke atas); siswa mendapat pesan ramah. */
@@ -140,13 +157,13 @@ async function setelahLogin(t){
     if(r.profile){ $('nama').value=r.profile.nama; saya.avatar=r.profile.avatar; tandaiAvatar(); }
     if(sudahMasuk) return;
     $('login').style.display='none'; $('lobi').style.display='block';
-    /* v2.22: selagi siswa mengisi nama/avatar, ambil galeri + koleksi + poin (satu panggilan). Server lama tanpa fungsi ini: hasil null, dipakai jalur lama saat masuk. */
+    /* v2.23: selagi siswa mengisi nama/avatar, ambil galeri + koleksi + poin (satu panggilan). Server lama tanpa fungsi ini: hasil null, dipakai jalur lama saat masuk. */
     praMuat={ t:Date.now(), p:gs('dataPameran').catch(()=>null) };
   }catch(e){ if(token) pesan(e.message,9000); }
 }
 /* Label versi: tampilkan versi server (Code.gs) dan peringatkan bila berbeda dari halaman */
 function cekVersiServer(v){
-  try{ const e=$('ver'); e.textContent=e.textContent.replace(/ \u00b7 server .*$/,'')+' \u00b7 server '+(v||'lama'); }catch(e){}
+  try{ tandaiModul('server',v||'lama'); }catch(e){}
   if(v!==VERSI){ if(!staf()){ try{ console.warn('Versi server '+(v||'lama')+' berbeda dari halaman '+VERSI); }catch(e){} return; }
     pesan('Server (Apps Script) berversi '+(v||'lama')+', halaman berversi '+VERSI+'. Minta pemilik memasang Code.gs terbaru (Deploy > New version).',12000); }
 }
@@ -174,7 +191,7 @@ function tandaiAvatar(){ document.querySelectorAll('#avatars button').forEach(b=
 AVATAR.forEach(([n,c])=>{ const b=document.createElement('button'); b.textContent=n; b.dataset.c=c; b.style.background=c;
   b.onclick=()=>{ saya.avatar=c; tandaiAvatar(); }; $('avatars').append(b); });
 tandaiAvatar();
-/* v2.22: data masuk pameran. Jalur cepat: data lobi (maks 60 dtk) + saveAvatar. Jalur biasa: masukPameran (satu panggilan). Server lama: tiga panggilan seperti dahulu. */
+/* v2.23: data masuk pameran. Jalur cepat: data lobi (maks 60 dtk) + saveAvatar. Jalur biasa: masukPameran (satu panggilan). Server lama: tiga panggilan seperti dahulu. */
 async function ambilDataMasuk(){
   const pra=praMuat; praMuat=null;
   if(pra && Date.now()-pra.t<60000){
@@ -196,7 +213,7 @@ $('masuk').onclick = async () => {
     galeri = d.galeri; dataAwal = { koleksi:d.koleksi, poin:d.poin };
     await mulaiMuatMuseum(); try{ renderJeda(false); $('scene').play(); }catch(e){}
     await bangunMuseum(); bangunGaleri(); mulaiMultiplayer(); pindah('A'); if(window.siapkanAdmin) siapkanAdmin(); $('lobi').style.display='none';
-  }catch(e){ $('masuk').disabled=false; sudahMasuk=false; dataAwal=null; $('hud').style.display='none'; $('lobi').style.display='block'; pesan(e.message,8000); }
+  }catch(e){ try{ const n=galatDariJejak(e.stack); if(n) galatModul(n); }catch(x){} $('masuk').disabled=false; sudahMasuk=false; dataAwal=null; $('hud').style.display='none'; $('lobi').style.display='block'; pesan(e.message,8000); }
   finally{ $('memuat').style.display = 'none'; }
 };
 
@@ -238,7 +255,7 @@ $('buat').onclick = async () => {
 async function mulaiMultiplayer(){
   if(!FB.databaseURL) return staf()&&pesan('Firebase belum dikonfigurasi: multiplayer nonaktif.',6000);
   if(!saya.id) return;   // v2.14: kunci Firebase = ID anonim dari server (email tidak lagi dikirim ke klien lain)
-  try{ await muatFirebase(); }catch(e){ console.warn(e.message); if(staf()) pesan('Firebase gagal dimuat: multiplayer nonaktif.',8000); return; }   // v2.22: skrip Firebase dimuat saat dibutuhkan
+  try{ await muatFirebase(); }catch(e){ console.warn(e.message); if(staf()) pesan('Firebase gagal dimuat: multiplayer nonaktif.',8000); return; }   // v2.23: skrip Firebase dimuat saat dibutuhkan
   firebase.initializeApp(FB); db=firebase.database();
   const id=saya.id, ref=db.ref('posisi/'+id);
   const r2=v=>Math.round(v*100)/100;
@@ -291,7 +308,7 @@ async function mulaiMultiplayer(){
   db.ref('posisi').on('child_changed',taruh);
   db.ref('posisi').on('child_removed',s=>buang(s.key));
 }
-/* ===== v2.22: pemuat skrip berat =====
+/* ===== v2.23: pemuat skrip berat =====
    A-Frame (>1 MB) dan Firebase tidak lagi di <head>, jadi halaman login langsung tampil. Setelah halaman selesai dimuat, A-Frame, museum.js dan admin.js
    diunduh di latar belakang; tombol "Masuk pameran" menunggu bila belum selesai. Adegan 3D dijeda sampai siswa masuk (hemat baterai/GPU di HP). */
 const SKRIP_AFRAME='https://aframe.io/releases/1.5.0/aframe.min.js', SKRIP_FB=['https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js'];
@@ -299,7 +316,7 @@ const _sekali={};
 function muatSekali(src){ return _sekali[src]||(_sekali[src]=new Promise((ok,gagal)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>ok();
   s.onerror=()=>{ delete _sekali[src]; s.remove(); gagal(new Error('Gagal memuat '+src.split('/').pop().split('?')[0]+'. Periksa koneksi internet lalu coba lagi.')); }; document.head.append(s); })); }
 async function muatFirebase(){ await muatSekali(SKRIP_FB[0]); await muatSekali(SKRIP_FB[1]); }
-/* v2.22: suntik <a-scene> dari template, di tempat yang sama dalam urutan DOM. Perangkat sentuh: tanpa antialias (hemat render). */
+/* v2.23: suntik <a-scene> dari template, di tempat yang sama dalam urutan DOM. Perangkat sentuh: tanpa antialias (hemat render). */
 function pasangScene(){
   if($('scene')) return;
   const t=$('tplScene'), sc=t.content.querySelector('#scene');
@@ -307,7 +324,7 @@ function pasangScene(){
   t.after(t.content.cloneNode(true));
 }
 let _renderBerhenti=false;
-/* v2.22: scene.pause() milik A-Frame hanya menghentikan tick komponen; penggambaran 3D tetap jalan tiap frame. Fungsi ini benar-benar menghentikannya
+/* v2.23: scene.pause() milik A-Frame hanya menghentikan tick komponen; penggambaran 3D tetap jalan tiap frame. Fungsi ini benar-benar menghentikannya
    (dipakai saat panel admin terbuka dan di layar login). */
 function renderJeda(henti){
   const sc=$('scene'); if(!sc||!sc.renderer||!sc.renderStarted) return;
@@ -325,17 +342,21 @@ let _muatMuseum=null;
 function mulaiMuatMuseum(){
   if(_muatMuseum) return _muatMuseum;
   _muatMuseum=(async()=>{
-    await muatSekali(SKRIP_AFRAME); pasangScene(); jedaScene();
-    await muatSekali('museum.js?v=2.22'); await muatSekali('admin.js?v=2.22');
+    try{ await muatSekali(SKRIP_AFRAME); }catch(e){ galatModul('museum'); throw e; }
+    pasangScene(); jedaScene();
+    for(const [n,src] of [['museum','museum.js?v=2.23'],['admin','admin.js?v=2.23']]){
+      try{ await muatSekali(src); }catch(e){ galatModul(n); throw e; }
+      if(!MODUL[n]) galatModul(n);   // skrip termuat tetapi tidak sampai baris penanda di akhir file (berhenti karena galat)
+    }
     if(FB.databaseURL) muatFirebase().catch(()=>{});   // unduh Firebase di latar belakang; galat ditangani saat mulaiMultiplayer
   })();
   _muatMuseum.catch(()=>{ _muatMuseum=null; });
   return _muatMuseum;
 }
-window.addEventListener('load',()=>setTimeout(()=>{ mulaiMuatMuseum().catch(()=>{}); },300));
-window.addEventListener('error',e=>{ try{ if(staf()) pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); else { console.error(e.message); pesan('Ada gangguan. Muat ulang halaman.',8000); } }catch(x){} });
+window.addEventListener('load',()=>{ if(!MODUL.akun) galatModul('akun'); setTimeout(()=>{ mulaiMuatMuseum().catch(()=>{}); },300); });
+window.addEventListener('error',e=>{ try{ const n=galatDariJejak(e.filename); if(n) galatModul(n); }catch(x){} try{ if(staf()) pesan('Galat skrip: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')',12000); else { console.error(e.message); pesan('Ada gangguan. Muat ulang halaman.',8000); } }catch(x){} });
 </script>
-<!-- v2.22: museum.js dan admin.js dimuat oleh mulaiMuatMuseum() setelah A-Frame. akun.js (login sandi/daftar) tetap langsung supaya kotak login lengkap. -->
-<script src="akun.js?v=2.22"></script>
+<!-- v2.23: museum.js dan admin.js dimuat oleh mulaiMuatMuseum() setelah A-Frame. akun.js (login sandi/daftar) tetap langsung supaya kotak login lengkap. -->
+<script src="akun.js?v=2.23" onerror="galatModul('akun')"></script>
 </body>
 </html>
